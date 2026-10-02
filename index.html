@@ -67,6 +67,8 @@ label.f > span.l{display:block;margin-bottom:4px}
 input[type=text],input[type=password],input[type=date],input[type=time],select,textarea{width:100%;border:1px solid #B7C1CB;border-radius:8px;padding:8px 10px;background:#fff;font-weight:400}
 textarea{resize:vertical}
 select.compact{width:auto;padding:5px 8px}
+.monthpick{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+.monthpick select{width:auto;min-width:170px;font-weight:600}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{appearance:none;border:0;background:#fff;padding:8px 18px;font-weight:600;cursor:pointer;border-right:1px solid var(--line)}
 .seg button:last-child{border-right:0}
@@ -181,10 +183,10 @@ tr.sel{background:#FFF8E3}
 .legend i.a{background:#B9C3CD}
 table.lv{width:auto;min-width:100%}
 .lv th,.lv td{padding:4px 2px;text-align:center;font-size:12px;border:1px solid var(--line);min-width:28px}
-.lv th:first-child,.lv td:first-child{text-align:left;padding:6px 10px;min-width:140px;position:sticky;left:0;background:#fff}
+.lv th:first-child,.lv td:first-child{text-align:left;padding:6px 10px;min-width:190px;position:sticky;left:0;background:#fff}
 .lv .we{background:#F1F3F5}
 .lv td.k{color:#fff;font-weight:700}
-.k-VL{background:#2F6DB5!important}.k-SL{background:#7B52A6!important}.k-EL{background:#B86E10!important}.k-ABS{background:#A63A2B!important}.k-RD{background:#6F7E8C!important}
+.k-VL{background:#2F6DB5!important}.k-SL{background:#7B52A6!important}.k-EL{background:#B86E10!important}.k-ABS{background:#A63A2B!important}.k-RD{background:#6F7E8C!important}.k-PR{background:#D9EEDF!important;color:#1E5E3A!important}.lv td.k.k-PR{color:#1E5E3A;font-weight:600}.k-ML{background:#B0457A!important}.k-PL{background:#2E8B7A!important}
 .lgd{display:inline-block;min-width:34px;text-align:center;border-radius:4px;color:#fff;font-weight:700;font-size:12px;padding:1px 6px;margin-right:6px}
 details.card > summary{cursor:pointer;font-weight:700}
 dl.meta dd{white-space:pre-wrap}
@@ -289,7 +291,7 @@ const weekStart = iso => { const d = dObj(iso); d.setDate(d.getDate() - ((d.getD
 const eachDay = (from, to) => { const out = []; if (!from) return out; to = to && to >= from ? to : from; for (let d = from, n = 0; d <= to && n < 400; d = addDays(d, 1), n++) out.push(d); return out; };
 /* A VS ticket is an entry that starts with VS-1234, with or without the Jira link in front. Those are not counted. */
 const isVS = e => /^\s*(https?:\/\/\S*\/browse\/)?VS-\d+/i.test(e || '');
-const LEAVE = { VL: 'Vacation leave', SL: 'Sick leave', EL: 'Emergency leave', ABS: 'Absent', RD: 'Rest day' };
+const LEAVE = { VL: 'Vacation leave', SL: 'Sick leave', EL: 'Emergency leave', ABS: 'Absent', ML: 'Maternity leave', PL: 'Paternity leave', RD: 'Rest day', PR: 'Present' };
 function newDraft() { return { images: [], colab: [] }; }
 
 function periodOf(t) {
@@ -352,7 +354,7 @@ const Store = (() => {
 let S = { cases: [], loop: [], supps: [], leave: [] };
 let IMG = {};
 const ui = { tab: 'dash', month: null, f: { month: '', lead: '', type: '', status: '', q: '' }, loopDay: null,
-             verifier: false, edit: null, draft: newDraft(), loopView: 'day', loopMonth: null, impGrid: null, dd: null, leaveMonth: null, leaveEdit: null, pasteKind: 'chat', exportMonth: 'all', fresh: null };
+             verifier: false, lvOnly: true, lvQ: '', lvx: null, edit: null, draft: newDraft(), loopView: 'day', loopMonth: null, impGrid: null, dd: null, leaveMonth: null, leaveEdit: null, pasteKind: 'chat', exportMonth: 'all', fresh: null };
 
 let saveT;
 function save() { clearTimeout(saveT); saveT = setTimeout(flush, 200); }
@@ -360,6 +362,16 @@ window.addEventListener('pagehide', () => { clearTimeout(saveT); flush(); });
 
 const leadsList = () => [...new Set([...DEFAULT_LEADS, ...S.cases.map(c => c.lead).filter(Boolean)])];
 const monthsList = () => [...new Set(S.cases.map(c => c.month).filter(Boolean))].sort();
+/* every month that has anything in it, plus the current month, so any of them can be picked */
+const allMonths = () => [...new Set([...monthsList(), ...S.loop.map(r => r.date.slice(0, 7)), ...S.leave.map(l => l.from.slice(0, 7)), todayISO().slice(0, 7)])].sort();
+function setMonth(m) { ui.month = m; ui.f.month = m; ui.loopMonth = m; ui.leaveMonth = m; if (ui.exportMonth !== 'all') ui.exportMonth = m; }
+function monthPicker(id, cur) {
+  const ms = allMonths(), years = [...new Set(ms.map(m => m.slice(0, 4)))];
+  return `<span class="monthpick"><button class="btn small" data-act="monthStep" data-d="-1" aria-label="Previous month"${ms.indexOf(cur) <= 0 ? ' disabled' : ''}>‹</button>
+    <select id="${id}" aria-label="Month">${years.map(y => `<optgroup label="${y}">${ms.filter(m => m.startsWith(y)).map(m => `<option value="${m}"${m === cur ? ' selected' : ''}>${monthLabel(m)}</option>`).join('')}</optgroup>`).join('')}</select>
+    <button class="btn small" data-act="monthStep" data-d="1" aria-label="Next month"${ms.indexOf(cur) >= ms.length - 1 ? ' disabled' : ''}>›</button>
+    <button class="btn small" data-act="monthNow">This month</button></span>`;
+}
 function normalizeCase(c) {
   if (!Array.isArray(c.colab)) c.colab = c.colab ? [String(c.colab).trim()].filter(Boolean) : [];
   if (!Array.isArray(c.images)) c.images = [];
@@ -419,9 +431,9 @@ function suppOptions() { return [...(S.supps || [])].sort().map(s => `<option va
 
 /* ------------------------------------------------------------ dashboard */
 function viewDash() {
-  const months = monthsList();
-  if (!months.length) return `<h2>No cases yet</h2><p class="empty">${Cloud.on ? 'The shared database is empty. Turn on Verify mode, open Export and click "Add the August and September data from Excel". Or post the first case now.' : 'Post your first case to start the scoreboard.'}</p><button class="btn primary" data-act="tab" data-tab="post">Post a case</button>`;
-  if (!ui.month || !months.includes(ui.month)) ui.month = months[months.length - 1];
+  const months = allMonths();
+  if (!monthsList().length && !S.loop.length) return `<h2>No cases yet</h2><p class="empty">${Cloud.on ? 'The shared database is empty. Turn on Verify mode, open Export and click "Add the August and September data from Excel". Or post the first case now.' : 'Post your first case to start the scoreboard.'}</p><button class="btn primary" data-act="tab" data-tab="post">Post a case</button>`;
+  if (!ui.month || !months.includes(ui.month)) ui.month = monthsList().slice(-1)[0] || months[months.length - 1];
   const m = ui.month, st = monthStats(m);
   const maxScore = Math.max(1, ...st.rows.map(r => r.score));
   const board = st.rows.map(r => `<tr>
@@ -457,7 +469,7 @@ function viewDash() {
 
   return `
   <div class="bar-row">
-    <div class="seg" role="group" aria-label="Month">${months.map(k => `<button data-act="month" data-m="${k}" aria-pressed="${k === m}">${monthLabel(k)}</button>`).join('')}</div>
+    ${monthPicker('dMonth', m)}
     <span class="muted">Complex = 3 points, Simple = 1 point. A case scores only when VF Inbox is Yes.</span>
   </div>
   <h2>Scores for ${monthLabel(m)}</h2>
@@ -515,7 +527,7 @@ function renderCaseRows() {
   const vb = $('#verifyAll'); if (vb) { vb.hidden = !(ui.verifier && w); vb.textContent = `Mark ${w} waiting as Yes`; }
 }
 function viewCases() {
-  const months = monthsList(), f = ui.f;
+  const months = allMonths(), f = ui.f;
   const opt = (arr, cur, all) => `<option value="">${all}</option>` + arr.map(([v, l]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('');
   return `
   <div class="tools"><h2 style="margin:0">Cases</h2><button class="btn primary" data-act="newCase">Post a case</button></div>
@@ -733,7 +745,7 @@ function viewLoop() {
   const rowsAll = loopRows(), days = [...new Set(rowsAll.map(r => r.date))].sort();
   const lmonths = [...new Set(days.map(d => d.slice(0, 7)))];
   if (!ui.loopDay) ui.loopDay = days[days.length - 1] || todayISO();
-  if (ui.loopMonth === null) ui.loopMonth = lmonths[lmonths.length - 1] || '';
+  if (ui.loopMonth === null) ui.loopMonth = ui.month || lmonths[lmonths.length - 1] || '';
   const view = ui.loopView, pr = periodRows(view, ui.loopMonth), mx = Math.max(1, ...pr.flatMap(r => [r.came || 0, r.handled]));
   const first = { day: 'Day', week: 'Week (Monday to Sunday)', month: 'Month' }[view];
   const body = pr.length ? pr.map(r => `<tr${view === 'day' && r.key === ui.loopDay ? ' class="sel"' : ''}>
@@ -759,7 +771,7 @@ function viewLoop() {
   <h3 style="margin-top:28px">Cases that came in and cases we handled</h3>
   <div class="bar-row" style="margin-bottom:10px">
     <div class="seg" role="group" aria-label="Summary period">${[['day', 'Per day'], ['week', 'Per week'], ['month', 'Per month']].map(([k, l]) => `<button data-act="loopView" data-v="${k}" aria-pressed="${view === k}">${l}</button>`).join('')}</div>
-    ${view === 'day' ? `<select id="lpMonth" class="compact" aria-label="Month"><option value="">All months</option>${lmonths.concat(monthsList()).filter((m, i, a) => a.indexOf(m) === i).sort().map(m => `<option value="${m}"${m === ui.loopMonth ? ' selected' : ''}>${monthLabel(m)}</option>`).join('')}</select>` : ''}
+    ${view === 'day' ? `<select id="lpMonth" class="compact" aria-label="Month"><option value="">All months</option>${allMonths().map(m => `<option value="${m}"${m === ui.loopMonth ? ' selected' : ''}>${monthLabel(m)}</option>`).join('')}</select>` : ''}
   </div>
   <div class="legend"><span><i class="a"></i>Came in (distinct Loop cases)</span><span><i style="background:var(--cx)"></i>Handled (cases posted here)</span></div>
   <div class="tscroll"><table><thead><tr><th>${first}</th><th class="num">Came in</th><th class="num">Handled</th><th class="num">Verified</th><th></th><th class="num">Handled vs came in</th></tr></thead><tbody>${body}</tbody></table></div>
@@ -813,24 +825,29 @@ function previewImp() {
 }
 
 /* --------------------------------------------------------- leave and absence */
+function leaveNames() { return [...new Set([...leadsList(), ...S.leave.map(l => l.lead)])].sort((a, b) => a.localeCompare(b)); }
 function viewLeave() {
-  const today = todayISO(), m = ui.leaveMonth || today.slice(0, 7), [y, mo] = m.split('-').map(Number), dim = new Date(y, mo, 0).getDate();
-  const leads = leadsList(), grid = {}, tot = {};
-  [...S.leave].sort((a, b) => a.from.localeCompare(b.from)).forEach(L => eachDay(L.from, L.to).forEach(d => { if (d.startsWith(m)) (grid[L.lead] ||= {})[+d.slice(8)] = L.type; }));
-  Object.entries(grid).forEach(([lead, days]) => { tot[lead] = { VL: 0, SL: 0, EL: 0, ABS: 0, RD: 0 }; Object.values(days).forEach(k => tot[lead][k]++); });
-  const months = [...new Set([...monthsList(), ...S.leave.map(l => l.from.slice(0, 7)), today.slice(0, 7), m])].sort();
-  const out = S.leave.filter(L => L.from <= today && (L.to || L.from) >= today);
-  const e = ui.leaveEdit ? S.leave.find(x => x.id === ui.leaveEdit) : null;
+  const today = todayISO(), m = ui.leaveMonth || ui.month || today.slice(0, 7), [y, mo] = m.split('-').map(Number), dim = new Date(y, mo, 0).getDate();
+  const kinds = Object.keys(LEAVE), q = (ui.lvQ || '').trim().toLowerCase(), grid = {}, tot = {};
+  [...S.leave].sort((a, b) => (a.src === 'attendance' ? 0 : 1) - (b.src === 'attendance' ? 0 : 1) || a.from.localeCompare(b.from))
+    .forEach(L => eachDay(L.from, L.to).forEach(d => { if (d.startsWith(m)) (grid[L.lead] ||= {})[+d.slice(8)] = L.type; }));
+  Object.entries(grid).forEach(([lead, days]) => { tot[lead] = Object.fromEntries(kinds.map(k => [k, 0])); Object.values(days).forEach(k => { if (tot[lead][k] !== undefined) tot[lead][k]++; }); });
+  const marked = new Set(Object.keys(grid));
+  const names = leaveNames().filter(n => (!q || title(n).toLowerCase().includes(q) || n.toLowerCase().includes(q)) && (!ui.lvOnly || marked.has(n) || (!q && leadsList().includes(n))));
+  const months = allMonths(), out = S.leave.filter(L => L.from <= today && (L.to || L.from) >= today && !['RD', 'PR'].includes(L.type));
+  const e = ui.leaveEdit ? S.leave.find(x => x.id === ui.leaveEdit) : null, known = leaveNames();
   const dow = d => new Date(y, mo - 1, d).getDay();
   const head = Array.from({ length: dim }, (_, i) => `<th class="${[0, 6].includes(dow(i + 1)) ? 'we' : ''}" scope="col">${i + 1}<br><span class="muted">${'SMTWTFS'[dow(i + 1)]}</span></th>`).join('');
-  const rows = leads.map(l => `<tr><td>${esc(title(l))}</td>${Array.from({ length: dim }, (_, i) => { const k = (grid[l] || {})[i + 1]; return k ? `<td class="k k-${k}" title="${LEAVE[k]}">${k}</td>` : `<td class="${[0, 6].includes(dow(i + 1)) ? 'we' : ''}"></td>`; }).join('')}</tr>`).join('');
-  const list = S.leave.filter(L => L.from.slice(0, 7) === m || (L.to || L.from).slice(0, 7) === m || (L.from < m + '-01' && (L.to || L.from) > m + '-28')).sort((a, b) => b.from.localeCompare(a.from));
+  const rows = names.map(l => `<tr><td>${esc(title(l))}</td>${Array.from({ length: dim }, (_, i) => { const k = (grid[l] || {})[i + 1]; return k ? `<td class="k k-${k}" title="${LEAVE[k]}">${k}</td>` : `<td class="${[0, 6].includes(dow(i + 1)) ? 'we' : ''}"></td>`; }).join('')}</tr>`).join('');
+  const list = S.leave.filter(L => (L.from.slice(0, 7) === m || (L.to || L.from).slice(0, 7) === m || (L.from < m + '-01' && (L.to || L.from) > m + '-28')) && (!q || title(L.lead).toLowerCase().includes(q))).sort((a, b) => b.from.localeCompare(a.from));
+  const nImp = S.leave.filter(L => L.src === 'attendance').length;
   return `
   <div class="tools"><h2 style="margin:0">Leave and absence</h2></div>
   <p class="hint">${out.length ? `Out today: <b>${out.map(L => `${esc(title(L.lead))} (${LEAVE[L.type]})`).join(', ')}</b>.` : 'Nobody is marked out today.'}</p>
-  <div class="card plain" style="background:var(--soft)"><h3>${e ? 'Edit entry' : 'Add leave or absence'}</h3>
+  ${lvxCard()}
+  <div class="card plain" style="background:var(--soft);margin-top:14px"><h3>${e ? 'Edit entry' : 'Tag leave or absence by hand'}</h3>
     <div class="formgrid" style="max-width:none">
-      <label class="f"><span class="l">Team lead</span><select id="lvLead">${leads.map(l => `<option value="${esc(l)}"${e && e.lead === l ? ' selected' : ''}>${esc(title(l))}</option>`).join('')}</select></label>
+      <label class="f"><span class="l">Name</span><select id="lvLead">${known.map(l => `<option value="${esc(l)}"${e && e.lead === l ? ' selected' : ''}>${esc(title(l))}</option>`).join('')}<option value="__new">Someone else…</option></select><input type="text" id="lvLeadNew" placeholder="Full name" style="margin-top:6px" hidden></label>
       <label class="f"><span class="l">Type</span><select id="lvType">${Object.entries(LEAVE).map(([k, v]) => `<option value="${k}"${e && e.type === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
       <label class="f"><span class="l">From</span><input type="date" id="lvFrom" value="${esc(e ? e.from : today)}"></label>
       <label class="f"><span class="l">To (same day if empty)</span><input type="date" id="lvTo" value="${esc(e && e.to !== e.from ? e.to : '')}"></label>
@@ -839,18 +856,124 @@ function viewLeave() {
     <div class="actions" style="margin-top:12px"><button class="btn primary" data-act="leaveSave">${e ? 'Save changes' : 'Add'}</button>${e ? '<button class="btn" data-act="leaveCancel">Cancel</button>' : ''}</div></div>
 
   <div class="bar-row" style="margin-top:28px;margin-bottom:10px"><h3 style="margin:0">${monthLabel(m)}</h3>
-    <select id="lvMonth" class="compact" aria-label="Month">${months.map(k => `<option value="${k}"${k === m ? ' selected' : ''}>${monthLabel(k)}</option>`).join('')}</select></div>
-  <div class="legend">${Object.entries(LEAVE).map(([k, v]) => `<span><span class="lgd k-${k}">${k}</span>${v}</span>`).join('')}</div>
-  <div class="tscroll"><table class="lv"><thead><tr><th scope="col">Team lead</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+    <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${monthPicker('lvMonth', m)}</span></div>
+  <div class="bar-row" style="margin-bottom:10px"><div class="legend" style="margin:0">${Object.entries(LEAVE).map(([k, v]) => `<span><span class="lgd k-${k}">${k}</span>${v}</span>`).join('')}</div>
+    <span style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><input type="text" id="lvSearch" placeholder="Search a name" value="${esc(ui.lvQ || '')}" aria-label="Search a name" style="width:200px">
+    <label style="font-size:14px"><input type="checkbox" id="lvOnly"${ui.lvOnly ? ' checked' : ''}> Only people with something this month</label></span></div>
+  <div class="tscroll"><table class="lv"><thead><tr><th scope="col">Name</th>${head}</tr></thead><tbody>${rows || `<tr><td colspan="${dim + 1}" class="empty">No one to show.</td></tr>`}</tbody></table></div>
 
-  <h3 style="margin-top:26px">Days off in ${monthLabel(m)}</h3>
-  <div class="tscroll"><table><thead><tr><th>Team lead</th>${Object.entries(LEAVE).map(([k, v]) => `<th class="num">${v}</th>`).join('')}<th class="num">Total days</th></tr></thead><tbody>
-    ${leads.map(l => { const t2 = tot[l] || { VL: 0, SL: 0, EL: 0, ABS: 0, RD: 0 }, sum = Object.values(t2).reduce((a, b) => a + b, 0); return `<tr><td>${esc(title(l))}</td>${Object.keys(LEAVE).map(k => `<td class="num">${t2[k] || '—'}</td>`).join('')}<td class="num"><b>${sum || '—'}</b></td></tr>`; }).join('')}</tbody></table></div>
+  <h3 style="margin-top:26px">Days in ${monthLabel(m)}</h3>
+  <div class="tscroll"><table><thead><tr><th>Name</th>${kinds.map(k => `<th class="num">${LEAVE[k]}</th>`).join('')}<th class="num">Leave and absent days</th></tr></thead><tbody>
+    ${names.map(l => { const t2 = tot[l] || Object.fromEntries(kinds.map(k => [k, 0])), sum = kinds.filter(k => !['RD', 'PR'].includes(k)).reduce((a, k) => a + (t2[k] || 0), 0); return `<tr><td>${esc(title(l))}</td>${kinds.map(k => `<td class="num">${t2[k] || '—'}</td>`).join('')}<td class="num"><b>${sum || '—'}</b></td></tr>`; }).join('')}</tbody></table></div>
 
-  <h3 style="margin-top:26px">Entries</h3>
-  <div class="tscroll"><table><thead><tr><th>Team lead</th><th>Type</th><th>Dates</th><th class="num">Days</th><th>Note</th><th></th></tr></thead><tbody>
-    ${list.length ? list.map(L => `<tr><td>${esc(title(L.lead))}</td><td><span class="lgd k-${L.type}">${L.type}</span>${LEAVE[L.type]}</td><td class="nowrap">${fmtDay(L.from, { month: 'short', day: 'numeric', year: 'numeric' })}${L.to && L.to !== L.from ? ' to ' + fmtDay(L.to, { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</td><td class="num">${eachDay(L.from, L.to).length}</td><td>${esc(L.note) || '<span class="muted">—</span>'}</td><td class="nowrap"><button class="linklike" data-act="leaveEdit" data-id="${L.id}">Edit</button> &nbsp; <button class="linklike" data-act="leaveDel" data-id="${L.id}" style="color:var(--bad)">Delete</button></td></tr>`).join('') : `<tr><td colspan="6" class="empty">No leave or absence entered for ${monthLabel(m)}.</td></tr>`}
+  <div class="bar-row" style="margin-top:26px;margin-bottom:6px"><h3 style="margin:0">Entries</h3>${nImp ? `<button class="btn small danger" data-act="lvxClear">Remove the ${nImp} imported entries</button>` : ''}</div>
+  <div class="tscroll"><table><thead><tr><th>Name</th><th>Type</th><th>Dates</th><th class="num">Days</th><th>Note</th><th></th></tr></thead><tbody>
+    ${list.length ? list.map(L => `<tr><td>${esc(title(L.lead))}</td><td><span class="lgd k-${L.type}">${L.type}</span>${LEAVE[L.type]}</td><td class="nowrap">${fmtDay(L.from, { month: 'short', day: 'numeric', year: 'numeric' })}${L.to && L.to !== L.from ? ' to ' + fmtDay(L.to, { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</td><td class="num">${eachDay(L.from, L.to).length}</td><td>${esc(L.note) || '<span class="muted">—</span>'}${L.src === 'attendance' ? ' <span class="muted">(imported)</span>' : ''}</td><td class="nowrap"><button class="linklike" data-act="leaveEdit" data-id="${L.id}">Edit</button> &nbsp; <button class="linklike" data-act="leaveDel" data-id="${L.id}" style="color:var(--bad)">Delete</button></td></tr>`).join('') : `<tr><td colspan="6" class="empty">No leave or absence entered for ${monthLabel(m)}.</td></tr>`}
   </tbody></table></div>`;
+}
+
+/* ---- auto-mark from an attendance export (.xls, .xlsx or .csv with EmpName, Date1 and Remarks columns) ----
+   Only the team leads are marked. A lead matches when their surname is one of the words in the employee's name. */
+const plain = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z ]/g, ' ').split(/\s+/).filter(Boolean);
+function matchLeads(emps) {
+  const map = {}, missing = [];
+  leadsList().forEach(lead => {
+    const w = plain(lead), sur = w[w.length - 1], first = w[0];
+    let c = emps.filter(e => plain(e).includes(sur));
+    if (c.length > 1) { const f = c.filter(e => plain(e).includes(first)); if (f.length) c = f; }
+    if (c.length) c.forEach(e => { map[e] = lead; }); else missing.push(lead);
+  });
+  return { map, missing };
+}
+function classify(remark, o) {
+  const x = String(remark).toLowerCase().trim(), lw = /lwop/.test(x) ? 'LWOP' : '';
+  if (!x) return null;
+  if (/present/.test(x)) {
+    if (!o.pr) return null;
+    const note = /restday/.test(x) ? 'Worked on rest day' : /holiday/.test(x) ? 'Worked on holiday' : /late/.test(x) ? 'Late' : /undertime/.test(x) ? 'Undertime' : '';
+    return { type: 'PR', note };
+  }
+  if (x === 'absent') return { type: 'ABS', note: '' };
+  if (/^vacation leave/.test(x)) return { type: 'VL', note: lw };
+  if (/^sick leave|^sl\b/.test(x)) return { type: 'SL', note: lw };
+  if (/^emergency leave|^el\b/.test(x)) return { type: 'EL', note: lw };
+  if (/^paternity/.test(x)) return { type: 'PL', note: lw };
+  if (/^ml\b|maternity/.test(x)) return { type: 'ML', note: lw };
+  if (x === 'restday' || x === 'holiday-restday') return o.rd ? { type: 'RD', note: '' } : null;
+  if (x === 'no login') return o.nl ? { type: 'ABS', note: 'No login' } : null;
+  return null;
+}
+/* Reads both layouts: one table with an EmpName column (all employees), or a single-employee report whose name is on an "Employee Name:" line. */
+function parseAttendanceSheet(g) {
+  const out = []; let emp = '', cols = null;
+  for (const r of g) {
+    const cells = r.map(c => xlStr(c)), nm = cells.find(c => /employee\s*name\s*:/i.test(c));
+    if (nm) { emp = nm.replace(/^.*employee\s*name\s*:\s*/i, '').replace(/^\s*\d+\s*-\s*/, '').trim(); continue; }
+    const low = cells.map(c => c.toLowerCase());
+    if (low.includes('remarks') && low.some(x => /^date/.test(x))) { cols = { date: low.findIndex(x => /^date/.test(x)), rem: low.indexOf('remarks'), name: low.indexOf('empname') }; continue; }
+    if (!cols) continue;
+    const date = xlDate(r[cols.date]), who = cols.name >= 0 ? cells[cols.name] : emp;
+    if (date && who) out.push({ emp: who, date, remark: cells[cols.rem] });
+  }
+  return out;
+}
+async function readAttendance(files, merge) {
+  if (!window.XLSX) { toast('The Excel reader did not load. Check your internet connection and reload.'); return; }
+  const prev = merge && ui.lvx ? ui.lvx : null, rows = prev ? [...prev.rows] : [], names = prev ? [prev.file] : [], bad = [];
+  for (const file of files) {
+    try {
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }); let n = 0;
+      wb.SheetNames.forEach(sn => { const r = parseAttendanceSheet(XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: true, defval: '' })); rows.push(...r); n += r.length; });
+      if (n) names.push(file.name); else bad.push(file.name);
+    } catch (e) { console.error(e); bad.push(file.name); }
+  }
+  if (bad.length) toast(`Could not use ${bad.join(', ')}. It needs Date and Remarks columns, plus an EmpName column or an "Employee Name:" line.`);
+  if (!rows.length) return;
+  const emps = [...new Set(rows.map(r => r.emp))], { map, missing } = matchLeads(emps), dates = rows.map(r => r.date).sort();
+  ui.lvx = { file: names.join(', '), rows, map, missing, nEmps: emps.length, off: prev ? prev.off : new Set(), all: prev ? prev.all : false, min: dates[0], max: dates[dates.length - 1], rd: prev ? prev.rd : true, pr: prev ? prev.pr : true, nl: prev ? prev.nl : false };
+  render();
+}
+const lvxWho = (x, r) => x.map[r.emp] || (x.all ? r.emp.toUpperCase().replace(/\s+/g, ' ') : '');
+const lvxPeople = x => [...new Set(x.rows.map(r => lvxWho(x, r)).filter(Boolean))].sort();
+function lvxRuns() {
+  const x = ui.lvx, by = {};
+  x.rows.forEach(r => { const who = lvxWho(x, r); if (!who || x.off.has(who)) return; const c = classify(r.remark, x); if (c) (by[who] ||= []).push({ date: r.date, ...c }); });
+  const runs = [];
+  Object.entries(by).forEach(([name, days]) => {
+    days.sort((a, b) => a.date.localeCompare(b.date)); days = days.filter((d, i) => i === 0 || d.date !== days[i - 1].date); let cur = null;
+    days.forEach(d => { if (cur && cur.type === d.type && cur.note === d.note && addDays(cur.to, 1) === d.date) cur.to = d.date; else { cur = { lead: name, type: d.type, from: d.date, to: d.date, note: d.note }; runs.push(cur); } });
+  });
+  return runs;
+}
+function lvxCard() {
+  const x = ui.lvx, input = `<input type="file" id="lvxFile" accept=".xls,.xlsx,.csv" multiple aria-label="Choose attendance exports">`;
+  if (!x) return `<details class="card plain" open><summary>Auto-mark from an attendance export</summary><p class="hint" style="margin-top:8px">Choose one or more Excel exports from your attendance system: the report for all employees, or a single employee's report. Only ${esc(leadsList().map(title).join(', '))} are marked, found by surname. You can still tag days by hand below.</p>${input}</details>`;
+  const runs = lvxRuns(), cnt = {}; runs.forEach(r => { cnt[r.lead] ||= {}; cnt[r.lead][r.type] = (cnt[r.lead][r.type] || 0) + eachDay(r.from, r.to).length; });
+  const kinds = Object.keys(LEAVE).filter(k => (k !== 'RD' || x.rd) && (k !== 'PR' || x.pr)), people = lvxPeople(x), skipped = x.nEmps - Object.keys(x.map).length;
+  const found = n => Object.entries(x.map).filter(([, l]) => l === n).map(([e]) => e);
+  return `<details class="card plain" open><summary>Auto-mark from an attendance export: ${esc(x.file)}</summary>
+    <p class="hint" style="margin:8px 0">Dates ${fmtDay(x.min, { month: 'short', day: 'numeric', year: 'numeric' })} to ${fmtDay(x.max, { month: 'short', day: 'numeric', year: 'numeric' })}. Importing again replaces earlier imported entries for the same dates and keeps what you tagged by hand.</p>
+    <p style="margin:0 0 8px">Add another report: <input type="file" id="lvxMore" accept=".xls,.xlsx,.csv" multiple aria-label="Add another attendance export"></p>
+    ${x.missing.length && !x.all ? `<p class="err" style="margin:0 0 8px;font-weight:600">No surname match yet for: ${esc(x.missing.map(title).join(', '))}. Nothing is marked for them. Add their report below if you have it.</p>` : ''}
+    <div class="tscroll" style="max-height:320px;overflow:auto"><table><thead><tr><th>Mark</th><th>Name</th><th>Found in file as</th>${kinds.map(k => `<th class="num">${k}</th>`).join('')}</tr></thead><tbody>
+    ${people.length ? people.map((p, i) => `<tr><td><input type="checkbox" data-lvxp="${i}"${x.off.has(p) ? '' : ' checked'} aria-label="Mark ${esc(title(p))}"></td><td>${esc(title(p))}</td><td class="muted">${esc(found(p).map(title).join('; ') || title(p))}</td>${kinds.map(k => `<td class="num">${(cnt[p] || {})[k] || '—'}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${kinds.length + 3}" class="empty">No one in this file matches the team leads.</td></tr>`}</tbody></table></div>
+    <label style="display:block;margin:10px 0 2px"><input type="checkbox" id="lvxAll"${x.all ? ' checked' : ''}> Also include the other ${skipped} people in the file</label>
+    <label style="display:block;margin:2px 0"><input type="checkbox" id="lvxPr"${x.pr ? ' checked' : ''}> Mark days they logged in (Present, including late and undertime)</label>
+    <label style="display:block;margin:2px 0"><input type="checkbox" id="lvxRd"${x.rd ? ' checked' : ''}> Mark rest days</label>
+    <label style="display:block;margin:2px 0"><input type="checkbox" id="lvxNl"${x.nl ? ' checked' : ''}> Treat "No Login" days as absent</label>
+    <div class="actions"><button class="btn primary" data-act="lvxApply"${runs.length ? '' : ' disabled'}>Mark ${plural(runs.length, 'period')}</button><button class="btn" data-act="lvxCancel">Cancel</button></div></details>`;
+}
+function applyLvx() {
+  const x = ui.lvx, on = new Set(lvxPeople(x).filter(p => !x.off.has(p))), runs = lvxRuns(), keep = [], rng = {};
+  x.rows.forEach(r => { const w = lvxWho(x, r); if (!w) return; const g = rng[w] || (rng[w] = [r.date, r.date]); if (r.date < g[0]) g[0] = r.date; if (r.date > g[1]) g[1] = r.date; });
+  S.leave.forEach(L => {
+    const to = L.to || L.from, g = rng[L.lead];
+    if (L.src !== 'attendance' || !on.has(L.lead) || !g || to < g[0] || L.from > g[1]) { keep.push(L); return; }
+    if (L.from < g[0]) keep.push({ ...L, to: addDays(g[0], -1) });
+    if (to > g[1]) keep.push({ ...L, id: uid(), from: addDays(g[1], 1), to });
+  });
+  S.leave = keep.concat(runs.map(r => ({ id: uid(), ...r, src: 'attendance' })));
+  save(); ui.lvx = null; toast(`Marked ${plural(runs.length, 'period')}`); render();
 }
 
 /* --------------------------------------------------------------- export */
@@ -867,6 +990,7 @@ function viewExport() {
     <button class="btn primary" data-act="exportXlsx">Download Excel</button>
   </div>
   <p class="muted">This export has ${plural(nCases, 'case')} and ${plural(nLoop, 'Loop row')}. Images are not placed in Excel; the Cases sheet shows how many each case has.</p>
+  ${xlCard()}
   ${backupCard(nImg)}`;
 }
 const serial = (iso) => Math.round((Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) - Date.UTC(1899, 11, 30)) / 864e5);
@@ -1012,7 +1136,8 @@ document.addEventListener('click', async e => {
   const a = el.dataset.act, id = el.dataset.id;
   switch (a) {
     case 'tab': if (el.dataset.tab !== 'post') { ui.edit = null; ui.draft = newDraft(); } go(el.dataset.tab); break;
-    case 'month': ui.month = el.dataset.m; render(); break;
+    case 'monthStep': { const ms = allMonths(), cur = ui.tab === 'leave' ? (ui.leaveMonth || ui.month || todayISO().slice(0, 7)) : (ui.month || ms[ms.length - 1]), n = ms[ms.indexOf(cur) + (+el.dataset.d)]; if (n) { setMonth(n); render(); } break; }
+    case 'monthNow': setMonth(todayISO().slice(0, 7)); render(); break;
     case 'goWaiting': ui.f = { month: ui.month, lead: '', type: '', status: 'waiting', q: '' }; go('cases'); break;
     case 'newCase': startPost(null); break;
     case 'signIn': { const eb = $('#authErr'); eb.hidden = true; try { await Cloud.U.signInWithEmailAndPassword(Cloud.auth, $('#authEmail').value.trim(), $('#authPw').value); } catch (err) { eb.textContent = authMsg(err); eb.hidden = false; } break; }
@@ -1020,6 +1145,8 @@ document.addEventListener('click', async e => {
     case 'signOut': await Cloud.U.signOut(Cloud.auth); break;
     case 'refreshView': render(); break;
     case 'seedCloud': seedCloud(); break;
+    case 'xlApply': applyXl(); break;
+    case 'xlCancel': ui.xl = null; render(); break;
     case 'migrateLocal': migrateLocal(); break;
     case 'dismissMigrate': Cloud.legacy = null; await Store.put('kv', 'migrated', true); render(); break;
     case 'open': openDetail(id); break;
@@ -1049,11 +1176,16 @@ document.addEventListener('click', async e => {
       if (!from) { eb.textContent = 'Choose the first day.'; eb.hidden = false; break; }
       if (to < from) { eb.textContent = 'The last day cannot be before the first day.'; eb.hidden = false; break; }
       const rec = ui.leaveEdit ? S.leave.find(x => x.id === ui.leaveEdit) : { id: uid() };
-      Object.assign(rec, { lead: $('#lvLead').value, type: $('#lvType').value, from, to, note: $('#lvNote').value.trim() });
+      const who = $('#lvLead').value === '__new' ? $('#lvLeadNew').value.trim().toUpperCase() : $('#lvLead').value;
+      if (!who) { eb.textContent = 'Enter a name.'; eb.hidden = false; break; }
+      Object.assign(rec, { lead: who, type: $('#lvType').value, from, to, note: $('#lvNote').value.trim() });
       if (!ui.leaveEdit) S.leave.push(rec);
       ui.leaveMonth = from.slice(0, 7); ui.leaveEdit = null; save(); toast('Saved'); render(); break; }
     case 'leaveEdit': ui.leaveEdit = id; render(); window.scrollTo({ top: 0 }); break;
     case 'leaveCancel': ui.leaveEdit = null; render(); break;
+    case 'lvxApply': applyLvx(); break;
+    case 'lvxCancel': ui.lvx = null; render(); break;
+    case 'lvxClear': if (await askConfirm('Remove every entry that came from an attendance import? Entries you tagged by hand are kept.', 'Remove')) { S.leave = S.leave.filter(L => L.src !== 'attendance'); save(); render(); } break;
     case 'leaveDel': if (await askConfirm('Delete this leave entry?', 'Delete')) { S.leave = S.leave.filter(x => x.id !== id); save(); render(); } break;
     case 'closeDetail': $('#detail').close(); break;
     case 'edit': if (locked(S.cases.find(x => x.id === id))) { toast(LOCK_MSG); break; } $('#detail').close(); startPost(id); break;
@@ -1114,13 +1246,26 @@ document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'verifier') { ui.verifier = t.checked; if ($('#detail').open) $('#detail').close(); render(); return; }
   if (t.dataset.vf) { const c = S.cases.find(x => x.id === t.dataset.vf); c.vf = t.value; stamp(c); save(); renderCaseRows(); if ($('#detail').open) openDetail(c.id); toast(`VF Inbox set to ${t.value || 'Waiting'}`); return; }
-  if (t.id === 'fMonth') { ui.f.month = t.value; renderCaseRows(); }
+  if (t.id === 'dMonth') { setMonth(t.value); render(); return; }
+  if (t.id === 'fMonth') { if (t.value) setMonth(t.value); else ui.f.month = ''; renderCaseRows(); }
   if (t.id === 'fLead') { ui.f.lead = t.value; renderCaseRows(); }
   if (t.id === 'fType') { ui.f.type = t.value; renderCaseRows(); }
   if (t.id === 'fStatus') { ui.f.status = t.value; renderCaseRows(); }
+  if (t.id === 'lvLead') { const n = $('#lvLeadNew'); n.hidden = t.value !== '__new'; if (!n.hidden) n.focus(); return; }
+  if (t.id === 'lvOnly') { ui.lvOnly = t.checked; render(); return; }
+  if (t.id === 'lvxFile' && t.files[0]) { readAttendance([...t.files], false); t.value = ''; return; }
+  if (t.id === 'lvxMore' && t.files[0]) { readAttendance([...t.files], true); t.value = ''; return; }
+  if (t.dataset.lvxp !== undefined) { const nm = lvxPeople(ui.lvx)[+t.dataset.lvxp]; if (t.checked) ui.lvx.off.delete(nm); else ui.lvx.off.add(nm); render(); return; }
+  if (t.id === 'lvxAll') { ui.lvx.all = t.checked; render(); return; }
+  if (t.id === 'lvxRd') { ui.lvx.rd = t.checked; render(); return; }
+  if (t.id === 'lvxPr') { ui.lvx.pr = t.checked; render(); return; }
+  if (t.id === 'lvxNl') { ui.lvx.nl = t.checked; render(); return; }
   if (t.id === 'xMonth') { ui.exportMonth = t.value; render(); }
-  if (t.id === 'lpMonth') { ui.loopMonth = t.value; render(); }
-  if (t.id === 'lvMonth') { ui.leaveMonth = t.value; render(); }
+  if (t.id === 'xlFile' && t.files[0]) { readWorkbook(t.files[0]); t.value = ''; return; }
+  if (t.dataset.xlsheet !== undefined) { ui.xl.sheets[+t.dataset.xlsheet].on = t.checked; render(); return; }
+  if (t.id === 'xlUpd') { ui.xl.updVf = t.checked; render(); return; }
+  if (t.id === 'lpMonth') { if (t.value) setMonth(t.value); else ui.loopMonth = ''; render(); }
+  if (t.id === 'lvMonth') { setMonth(t.value); render(); }
   if (t.id === 'ddTime' || t.id === 'ddDate' || t.id === 'ddConcern') syncDd();
   if (t.id === 'fLeadSel') { const n = $('#fLeadNew'); n.hidden = t.value !== '__new'; if (!n.hidden) n.focus(); }
   if (t.id === 'fDate') {
@@ -1134,6 +1279,7 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('input', e => {
   const t = e.target;
+  if (t.id === 'lvSearch') { ui.lvQ = t.value; clearTimeout(window.__lvT); window.__lvT = setTimeout(() => { render(); const s = $('#lvSearch'); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); } }, 150); return; }
   if (t.id === 'fQ') { ui.f.q = t.value; renderCaseRows(); }
   if (t.id === 'fTime') updatePeriodNote();
   if (t.id === 'impText') { ui.impGrid = null; previewImp(); }
@@ -1260,6 +1406,98 @@ async function imgDel(id) {
   delete IMG[id];
   if (Cloud.on) Cloud.F.deleteDoc(Cloud.F.doc(Cloud.db, 'images', id)).catch(() => {});
   else await Store.del('img', id);
+}
+
+/* ---------------------------------------------------------- import from an Excel workbook */
+const MON3 = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
+function sheetMonth(name) {
+  const m = /^([A-Za-z]{3})[A-Za-z]*\.?\s+(\d{4})$/.exec(String(name).trim()); if (!m) return null;
+  const k = MON3[m[1].toUpperCase()]; return k ? `${m[2]}-${pad(k)}` : null;
+}
+const xlStr = v => (typeof v === 'number' && Number.isInteger(v) ? String(v) : String(v == null ? '' : v)).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+function xlDate(v) {
+  if (v === '' || v == null) return '';
+  if (typeof v === 'number') { const d = XLSX.SSF.parse_date_code(v); return d ? `${d.y}-${pad(d.m)}-${pad(d.d)}` : ''; }
+  if (v instanceof Date) return isoOf(v);
+  const s = xlStr(v), a = /^(\d{4})-(\d{2})-(\d{2})/.exec(s), b = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s);
+  return a ? `${a[1]}-${a[2]}-${a[3]}` : b ? `${b[3]}-${pad(b[1])}-${pad(b[2])}` : '';
+}
+function xlTime(v) {
+  if (v === '' || v == null) return '';
+  if (typeof v === 'number') { const m = Math.round((v % 1) * 1440) % 1440; return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; }
+  if (v instanceof Date) return `${pad(v.getHours())}:${pad(v.getMinutes())}`;
+  const m = /^(\d{1,2}):(\d{2})/.exec(xlStr(v)); return m ? `${pad(m[1])}:${m[2]}` : '';
+}
+const caseKey = c => [c.month, c.date, c.time, c.lead, (c.concern || '').toLowerCase()].join('|');
+function parseCaseSheet(ws, month) {
+  const g = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+  const hi = g.findIndex(r => r.some(c => /^date$/i.test(xlStr(c))) && r.some(c => /concern/i.test(xlStr(c)))); if (hi < 0) return null;
+  const h = g[hi].map(c => xlStr(c).toLowerCase()), col = re => h.findIndex(x => re.test(x));
+  const C = { date: col(/^date$/), time: col(/email time/), lead: col(/team lead/), colab: col(/colab/), sid: col(/service id/), cno: col(/case number/), concern: col(/concern/), type: col(/type of issue/), result: col(/^result/), took: col(/took over/), vf: col(/vf inbox/), rem: col(/remarks/) };
+  const at = (r, k) => C[k] >= 0 ? r[C[k]] : '';
+  const out = [];
+  for (let i = hi + 1; i < g.length; i++) {
+    const r = g[i]; if (!xlStr(at(r, 'lead')) && !xlStr(at(r, 'concern'))) continue;
+    const type = xlStr(at(r, 'type')), vf = xlStr(at(r, 'vf')), colab = xlStr(at(r, 'colab'));
+    out.push({ row: i + 1, month, date: xlDate(at(r, 'date')), time: xlTime(at(r, 'time')), lead: xlStr(at(r, 'lead')).toUpperCase(), colab: colab ? [colab] : [],
+      serviceId: xlStr(at(r, 'sid')), caseNo: xlStr(at(r, 'cno')), concern: xlStr(at(r, 'concern')), type: /^complex$/i.test(type) ? 'Complex' : /^simple$/i.test(type) ? 'Simple' : '',
+      result: xlStr(at(r, 'result')), took: xlStr(at(r, 'took')), vf: /^yes$/i.test(vf) ? 'Yes' : /^no$/i.test(vf) ? 'No' : '', remarks: xlStr(at(r, 'rem')), instruction: '', images: [] });
+  }
+  return out;
+}
+function parseLoopSheet(ws) {
+  const g = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+  const hi = g.findIndex(r => r.some(c => /email\s*\/?\s*jsd/i.test(xlStr(c)))); if (hi < 0) return [];
+  const h = g[hi].map(c => xlStr(c).toLowerCase()), ci = h.findIndex(x => x.startsWith('email')), ii = h.findIndex(x => x === 'issue'), ai = h.findIndex(x => x.startsWith('assign')), di = h.findIndex(x => x === 'date');
+  if (di < 0) return [];
+  return g.slice(hi + 1).map(r => ({ date: xlDate(r[di]), email: xlStr(r[ci]), issue: ii >= 0 ? xlStr(r[ii]) : '', assigned: ai >= 0 ? xlStr(r[ai]).replace(/^@\s*/, '') : '' })).filter(r => r.date && r.email);
+}
+async function readWorkbook(file) {
+  if (!window.XLSX) { toast('The Excel reader did not load. Check your internet connection and reload.'); return; }
+  try {
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }), sheets = [];
+    wb.SheetNames.forEach(n => { const m = sheetMonth(n); if (!m) return; const rows = parseCaseSheet(wb.Sheets[n], m); if (rows && rows.length) sheets.push({ name: n, month: m, rows, on: m === '2026-08' || m === '2026-09' }); });
+    sheets.sort((a, b) => b.month.localeCompare(a.month));
+    const loop = wb.Sheets['Escalation Loop'] ? parseLoopSheet(wb.Sheets['Escalation Loop']) : [];
+    const lk = wb.Sheets['Lookup'] ? XLSX.utils.sheet_to_json(wb.Sheets['Lookup'], { header: 1, raw: true, defval: '' }).slice(1).map(r => xlStr(r[0]).toUpperCase()).filter(Boolean) : [];
+    if (!sheets.length) { toast('No month sheets with cases were found in that file.'); return; }
+    ui.xl = { file: file.name, sheets, loop, supps: lk, updVf: false }; render();
+  } catch (e) { console.error(e); toast('Could not read that Excel file.'); }
+}
+function xlCounts() {
+  const x = ui.xl, have = new Map(S.cases.map(c => [caseKey(c), c]));
+  const per = x.sheets.map(s => { let nw = 0, ex = 0, upd = 0; s.rows.forEach(r => { const o = have.get(caseKey(r)); if (!o) nw++; else { ex++; if (r.vf && !o.vf) upd++; } }); return { nw, ex, upd }; });
+  const months = new Set(x.sheets.filter(s => s.on).map(s => s.month)), lh = new Set(S.loop.map(r => r.id));
+  let ln = 0, lv = 0; x.loop.forEach(r => { if (!months.has(r.date.slice(0, 7))) return; if (isVS(r.email)) { lv++; return; } const id = loopId(r.date, r.email, r.issue); if (!lh.has(id)) { lh.add(id); ln++; } });
+  return { per, ln, lv };
+}
+function xlCard() {
+  if (Cloud.on && !ui.verifier) return `<div class="card"><h3>Import from Excel</h3><p class="hint" style="margin:0">Turn on Verify mode to import cases from an Excel workbook.</p></div>`;
+  const x = ui.xl, input = `<input type="file" id="xlFile" accept=".xlsx,.xlsm" aria-label="Choose an Excel workbook">`;
+  if (!x) return `<div class="card"><h3>Import from Excel</h3><p class="hint">Choose your Escalation Cases workbook. You will see what will be added before anything changes. Cases already in the portal are skipped.</p>${input}</div>`;
+  const c = xlCounts(), total = c.per.reduce((a, p, i) => a + (x.sheets[i].on ? p.nw : 0), 0), upd = c.per.reduce((a, p, i) => a + (x.sheets[i].on ? p.upd : 0), 0);
+  return `<div class="card"><h3>Import from Excel: ${esc(x.file)}</h3>
+    <div class="tscroll"><table><thead><tr><th>Import</th><th>Sheet</th><th class="num">Cases in sheet</th><th class="num">Already in portal</th><th class="num">New</th></tr></thead><tbody>
+    ${x.sheets.map((s, i) => `<tr><td><input type="checkbox" data-xlsheet="${i}" ${s.on ? 'checked' : ''} aria-label="Import ${esc(s.name)}"></td><td>${esc(monthLabel(s.month))} <span class="muted">(${esc(s.name)})</span></td><td class="num">${s.rows.length}</td><td class="num">${c.per[i].ex}</td><td class="num"><b>${c.per[i].nw}</b></td></tr>`).join('')}</tbody></table></div>
+    <p class="hint" style="margin:10px 0 4px">Loop days for the ticked months: <b>${c.ln}</b> new rows${c.lv ? `, ${plural(c.lv, 'VS ticket')} skipped` : ''}.</p>
+    <label style="display:block;margin:6px 0"><input type="checkbox" id="xlUpd"${x.updVf ? ' checked' : ''}> Also copy VF Inbox from Excel onto cases already in the portal that are still waiting (${upd} would change)</label>
+    <div class="actions"><button class="btn primary" data-act="xlApply">Import ${plural(total, 'new case')}</button><button class="btn" data-act="xlCancel">Cancel</button></div></div>`;
+}
+function applyXl() {
+  const x = ui.xl, have = new Map(S.cases.map(c => [caseKey(c), c])), ids = new Set(S.cases.map(c => c.id)); let nc = 0, nu = 0, nl = 0;
+  x.sheets.filter(s => s.on).forEach(s => s.rows.forEach(r => {
+    const o = have.get(caseKey(r));
+    if (o) { if (x.updVf && r.vf && !o.vf) { o.vf = r.vf; stamp(o); nu++; } return; }
+    let id = `x${s.month.slice(2, 4)}${s.month.slice(5)}${String(r.row).padStart(3, '0')}`; while (ids.has(id)) id += 'a'; ids.add(id);
+    const { row, ...c } = r; c.id = id; normalizeCase(c); stamp(c); S.cases.push(c); have.set(caseKey(c), c); nc++;
+  }));
+  const months = new Set(x.sheets.filter(s => s.on).map(s => s.month)), lh = new Set(S.loop.map(r => r.id));
+  x.loop.forEach(r => { if (!months.has(r.date.slice(0, 7)) || isVS(r.email)) return; const id = loopId(r.date, r.email, r.issue); if (lh.has(id)) return; lh.add(id); S.loop.push({ id, date: r.date, email: r.email, issue: r.issue, assigned: r.assigned }); nl++; });
+  S.loop.sort((a, b) => a.date.localeCompare(b.date));
+  S.supps = [...new Set([...(S.supps || []), ...x.supps])].sort();
+  normalize(); save(); ui.xl = null;
+  const ms = monthsList(); ui.month = ms[ms.length - 1] || null; ui.f.month = ui.month || '';
+  toast(`Imported ${plural(nc, 'case')} and ${plural(nl, 'Loop row')}${nu ? `, updated VF Inbox on ${nu}` : ''}`); render();
 }
 
 /* one-time helpers for the first person who sets things up */
