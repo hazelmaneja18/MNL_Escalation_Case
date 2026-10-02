@@ -225,7 +225,7 @@ dl.meta dd{margin:0;overflow-wrap:anywhere}
       <label class="switch"><input type="checkbox" id="verifier"><span class="track" aria-hidden="true"></span>Verify mode for Glenn</label>
       <button id="stale" class="store warn" data-act="refreshView" hidden>New changes from the team. Refresh</button>
       <span id="storeNote" class="store"></span>
-      <span id="who" class="store"></span><button class="linklike" id="signInBtn" data-act="openAuth" hidden>Glenn sign in</button><button class="linklike" id="signOutBtn" data-act="signOut" hidden>Sign out</button>
+      <span id="who" class="store"></span>
     </div>
   </header>
   <nav class="tabs" role="tablist" aria-label="Sections" id="tabs"></nav>
@@ -238,12 +238,6 @@ dl.meta dd{margin:0;overflow-wrap:anywhere}
 <div id="toast" role="status" aria-live="polite"></div>
 <input type="file" id="restoreFile" accept="application/json,.json" hidden>
 <datalist id="suppList"></datalist>
-<dialog id="authDlg" style="max-width:420px"><div class="dlg"><h2>Glenn sign in</h2>
-  <p class="hint">Only needed to approve cases. Everyone else can use the site without signing in.</p>
-  <label class="f"><span class="l">Email</span><input type="text" id="authEmail" autocomplete="username" inputmode="email"></label>
-  <label class="f" style="margin-top:10px"><span class="l">Password</span><input type="password" id="authPw" autocomplete="current-password"></label>
-  <p class="err" id="authErr" role="alert" hidden></p>
-  <div class="actions"><button class="btn primary" data-act="signIn">Sign in</button><button class="btn" onclick="document.getElementById('authDlg').close()">Cancel</button></div></div></dialog>
 <dialog id="suppDlg" style="max-width:460px"><div class="dlg"><h2>Supp list</h2>
   <p class="hint">Names suggested when you type in Colab / Tucson supp. Removing a name here does not change old cases.</p>
   <div class="addrow"><input type="text" id="suppNew" placeholder="Add a name" aria-label="New supp name"><button class="btn" data-act="suppAdd">Add</button></div>
@@ -426,7 +420,7 @@ function suppOptions() { return [...(S.supps || [])].sort().map(s => `<option va
 /* ------------------------------------------------------------ dashboard */
 function viewDash() {
   const months = monthsList();
-  if (!months.length) return `<h2>No cases yet</h2><p class="empty">${Cloud.on ? 'The shared database is empty. Glenn can load the August and September data from Excel: click "Glenn sign in", then open Export. Or post the first case now.' : 'Post your first case to start the scoreboard.'}</p><button class="btn primary" data-act="tab" data-tab="post">Post a case</button>`;
+  if (!months.length) return `<h2>No cases yet</h2><p class="empty">${Cloud.on ? 'The shared database is empty. Turn on Verify mode, open Export and click "Add the August and September data from Excel". Or post the first case now.' : 'Post your first case to start the scoreboard.'}</p><button class="btn primary" data-act="tab" data-tab="post">Post a case</button>`;
   if (!ui.month || !months.includes(ui.month)) ui.month = months[months.length - 1];
   const m = ui.month, st = monthStats(m);
   const maxScore = Math.max(1, ...st.rows.map(r => r.score));
@@ -1021,7 +1015,6 @@ document.addEventListener('click', async e => {
     case 'month': ui.month = el.dataset.m; render(); break;
     case 'goWaiting': ui.f = { month: ui.month, lead: '', type: '', status: 'waiting', q: '' }; go('cases'); break;
     case 'newCase': startPost(null); break;
-    case 'openAuth': showAuth(); break;
     case 'signIn': { const eb = $('#authErr'); eb.hidden = true; try { await Cloud.U.signInWithEmailAndPassword(Cloud.auth, $('#authEmail').value.trim(), $('#authPw').value); } catch (err) { eb.textContent = authMsg(err); eb.hidden = false; } break; }
     case 'signInMs': { const eb = $('#authErr'); eb.hidden = true; try { await Cloud.U.signInWithPopup(Cloud.auth, new Cloud.U.OAuthProvider('microsoft.com')); } catch (err) { eb.textContent = authMsg(err); eb.hidden = false; } break; }
     case 'signOut': await Cloud.U.signOut(Cloud.auth); break;
@@ -1174,11 +1167,11 @@ document.addEventListener('paste', e => {
 /* ============================================================ shared database (Firebase) */
 const Cloud = { on: CLOUD, ready: false, user: null, isVerifier: false, legacy: null, pending: 0, unsubs: [], last: { cases: {}, loop: {}, leave: {} }, lastSettings: '', imgPending: new Set(), imgTries: {} };
 const COLS = ['cases', 'loop', 'leave'];
-const LOCK_MSG = 'Verified cases can only be changed by Glenn.';
+const LOCK_MSG = 'Verified cases can only be changed in Verify mode.';
 const stable = o => JSON.stringify(o, (k, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : v);
 function hashId(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
 const loopId = (d, e, i) => 'L' + String(d).replace(/-/g, '') + hashId([d, e, i].join('|').toLowerCase());
-const locked = c => !!(Cloud.on && c && c.vf === 'Yes' && !Cloud.isVerifier);
+const locked = c => !!(Cloud.on && c && c.vf === 'Yes' && !ui.verifier);
 function stamp(c) { if (Cloud.on && Cloud.user) { c.updatedBy = Cloud.user.email || 'Team member'; c.updatedAt = new Date().toISOString(); } }
 const missingMsg = id => !Cloud.on ? 'Image data not found in this browser' : (Cloud.imgPending.has(id) || (!IMG[id] && (Cloud.imgTries[id] || 0) < 4)) ? 'Loading image…' : 'Image not found';
 
@@ -1191,7 +1184,7 @@ function setSync() {
 window.addEventListener('online', setSync); window.addEventListener('offline', setSync);
 function cloudError(e) {
   console.error(e); const c = e && e.code || '';
-  toast(c === 'permission-denied' ? 'Not allowed. Only Glenn can set VF Inbox or change verified cases.' : `Could not save: ${(e && e.message) || e}`);
+  toast(c === 'permission-denied' ? 'The database refused the change. Check that the security rules are published and Anonymous sign-in is enabled.' : `Could not save: ${(e && e.message) || e}`);
 }
 const authMsg = e => ({ 'auth/invalid-credential': 'The email or password is not right.', 'auth/wrong-password': 'The email or password is not right.', 'auth/user-not-found': 'The email or password is not right.', 'auth/invalid-email': 'Enter a valid email address.', 'auth/too-many-requests': 'Too many tries. Wait a few minutes and try again.', 'auth/popup-closed-by-user': 'The sign-in window was closed.' }[e && e.code] || (e && e.message) || 'Could not sign in.');
 
@@ -1296,10 +1289,10 @@ function backupCard(nImg) {
   if (!Cloud.on) return `<div class="card"><h3>Backup and restore</h3>
     <p class="hint">Cases, Loop days and all ${plural(nImg, 'image')} are saved in this browser only. To move everything to another computer or share it with the team, download a backup and restore it there.</p>
     <div class="actions" style="margin-top:8px"><button class="btn" data-act="backup">Download backup</button><button class="btn" data-act="restore">Restore from backup</button><button class="btn danger" data-act="reset">Reset to the original Excel data</button></div></div>`;
-  const needSeed = Cloud.isVerifier && !S.cases.some(c => /^x\d/.test(c.id));
+  const seeded = S.cases.some(c => /^x\d/.test(c.id)), needSeed = ui.verifier && !seeded;
   return `<div class="card"><h3>Shared database</h3>
     <p class="hint">Everything is stored in Firebase and shared with the team: ${plural(S.cases.length, 'case')}, ${plural(S.loop.length, 'Loop row')}, ${plural(S.leave.length, 'leave entry')} and ${plural(Object.keys(IMG).length, 'image')} loaded in this browser.</p>
-    <div class="actions" style="margin-top:8px"><button class="btn" data-act="backup">Download a backup file</button>${needSeed ? '<button class="btn" data-act="seedCloud">Add the August and September data from Excel</button>' : ''}</div></div>
+    <div class="actions" style="margin-top:8px"><button class="btn" data-act="backup">Download a backup file</button>${needSeed ? '<button class="btn" data-act="seedCloud">Add the August and September data from Excel</button>' : ''}</div>${!seeded && !ui.verifier ? '<p class="hint" style="margin-top:8px">To add the August and September data from Excel, turn on Verify mode first.</p>' : ''}</div>
   ${Cloud.legacy ? `<div class="card"><h3>Data found in this browser</h3><p class="hint">This browser has cases, Loop days or leave saved from before the move to Firebase. Upload them so the whole team can see them.</p><div class="actions"><button class="btn primary" data-act="migrateLocal">Upload to the shared database</button><button class="btn" data-act="dismissMigrate">Not now</button></div></div>` : ''}`;
 }
 
@@ -1314,12 +1307,8 @@ async function cloudInit() {
 function teardown() {
   Cloud.unsubs.forEach(u => { try { u(); } catch (e) {} }); Cloud.unsubs = []; Cloud.ready = false; Cloud.user = null; Cloud.isVerifier = false; Cloud.session = null;
   S = { cases: [], loop: [], supps: [], leave: [] }; IMG = {}; Cloud.last = { cases: {}, loop: {}, leave: {} }; Cloud.lastSettings = '';
-  $('#who').textContent = ''; $('#signOutBtn').hidden = true; $('#signInBtn').hidden = true; $('#storeNote').textContent = ''; $('#tabs').innerHTML = '';
+  $('#who').textContent = ''; $('#storeNote').textContent = ''; $('#tabs').innerHTML = '';
   $('#view').innerHTML = '<p class="empty">Loading…</p>';
-}
-function showAuth() {
-  $('#authEmail').value = (Cloud.verifierEmails || [])[0] || ''; $('#authPw').value = ''; $('#authErr').hidden = true;
-  if (!$('#authDlg').open) $('#authDlg').showModal(); setTimeout(() => $('#authPw').focus(), 50);
 }
 const CLOUD_TIMEOUT = window.__cloudTimeout || 15000;
 const withTimeout = (p, ms = CLOUD_TIMEOUT) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('Timed out'), { code: 'timeout' })), ms))]);
@@ -1331,19 +1320,24 @@ function explain(e) {
   if (c === 'not-found' || c === 'failed-precondition') return 'The Firestore database does not seem to exist yet. ' + fix;
   return ((e && e.message) || 'Unknown error') + (c ? ` (${c}). ` : '. ') + fix;
 }
+function authExplain(e) {
+  const c = (e && e.code) || '', where = location.protocol === 'file:' ? ' You are opening the page as a file on your computer; hosting it at a web address (for example Firebase Hosting) is more reliable.' : '';
+  let m;
+  if (['auth/operation-not-allowed', 'auth/admin-restricted-operation'].includes(c)) m = 'Anonymous sign-in is turned off. In Firebase open Build > Authentication > Sign-in method, then enable Anonymous.';
+  else if (c === 'auth/configuration-not-found') m = 'Authentication has not been set up in this Firebase project. Open Build > Authentication, click Get started, then enable Anonymous.';
+  else if (['auth/api-key-not-valid', 'auth/invalid-api-key'].includes(c)) m = 'Firebase rejected the API key in this file. Check the FIREBASE_CONFIG values near the top of the file.';
+  else if (c === 'auth/network-request-failed') m = 'The request to Google was blocked or failed. A company network or proxy may block Google sign-in (identitytoolkit.googleapis.com) or Firestore. Try another network, or ask IT to allow these Google addresses.';
+  else if (['auth/operation-not-supported-in-this-environment', 'auth/unauthorized-domain', 'auth/web-storage-unsupported'].includes(c)) m = 'Firebase does not allow sign-in from this address. Host the page at a web address and add that address under Authentication > Settings > Authorized domains.';
+  else m = 'Sign-in to the shared database failed.';
+  return `${m}${where} (Error code: ${c || 'unknown'}${e && e.message ? ' | ' + e.message : ''})`;
+}
 function cloudFail(msg, e) { console.error(e); $('.switch').hidden = true; $('#storeNote').textContent = 'Not connected'; $('#storeNote').classList.add('warn'); $('#view').innerHTML = `<h2>Could not connect to the shared database</h2><p class="muted" style="max-width:720px">${esc(msg)}</p><button class="btn primary" onclick="location.reload()">Try again</button>`; }
 async function startSession(user) {
-  const { F, db } = Cloud, email = (user.email || '').toLowerCase();
+  const { F, db } = Cloud;
   if (Cloud.session === user.uid) return; Cloud.session = user.uid;
-  if ($('#authDlg').open) $('#authDlg').close();
   $('#view').innerHTML = '<p class="empty">Loading the shared data…</p>'; $('#storeNote').textContent = 'Connecting…';
-  let team = null;
-  try { const s = await withTimeout(F.getDoc(F.doc(db, 'meta', 'team'))); team = s.exists() ? s.data() : null; } catch (e) { Cloud.session = null; return cloudFail(explain(e), e); }
-  Cloud.verifierEmails = ((team && team.verifiers) || []).map(x => String(x).toLowerCase());
-  Cloud.user = user; Cloud.isVerifier = !!email && Cloud.verifierEmails.includes(email);
-  $('#who').textContent = Cloud.isVerifier ? email + ' (verifier)' : '';
-  $('#signOutBtn').hidden = !email; $('#signInBtn').hidden = !!email;
-  $('.switch').hidden = !Cloud.isVerifier; ui.verifier = false; $('#verifier').checked = false;
+  Cloud.user = user; Cloud.isVerifier = true;
+  $('.switch').hidden = false; ui.verifier = false; $('#verifier').checked = false;
   S = { cases: [], loop: [], supps: [], leave: [] };
   const firsts = [];
   const watch = (src, fn) => firsts.push(new Promise(res => { let first = true; const done = () => { if (first) { first = false; res(); } };
@@ -1372,7 +1366,7 @@ async function bootCloud() {
   Cloud.U.onAuthStateChanged(Cloud.auth, user => {
     if (!user) {
       teardown();
-      Cloud.U.signInAnonymously(Cloud.auth).catch(e => cloudFail(['auth/operation-not-allowed', 'auth/admin-restricted-operation'].includes(e.code) ? 'Anonymous access is not turned on. In Firebase, open Authentication > Sign-in method and enable Anonymous.' : 'Could not connect to the shared database.', e));
+      Cloud.U.signInAnonymously(Cloud.auth).catch(e => cloudFail(authExplain(e), e));
     } else { if (Cloud.session && Cloud.session !== user.uid) teardown(); startSession(user); }
   });
 }
