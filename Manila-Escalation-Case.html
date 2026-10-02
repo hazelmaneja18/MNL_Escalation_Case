@@ -1,0 +1,1393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manila Escalation Case</title>
+<style>
+:root{
+  --bg:#EDF0F3; --card:#fff; --ink:#18232F; --muted:#586674; --line:#D3DAE1; --soft:#F5F7F9;
+  --folder:#E6BC62; --folder-deep:#C69A3A;
+  --cx:#0E6B73; --sp:#6C86A3; --ok:#2B7A4B; --warn:#8A5A00; --warn-bg:#FFF0CF; --bad:#A63A2B;
+  --display:Bahnschrift,"DIN Alternate","Arial Narrow","Segoe UI",system-ui,sans-serif;
+  --body:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--body)}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid #1F5FBF;outline-offset:2px}
+button,input,select,textarea{font:inherit;color:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)}
+.nowrap{white-space:nowrap}
+
+/* header */
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding:22px 0 14px}
+.top h1{margin:0;font:600 32px/1.05 var(--display);letter-spacing:.2px}
+.top p{margin:4px 0 0;color:var(--muted)}
+.top-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.store{font-size:13px;color:var(--muted)}
+button.store{border:0;cursor:pointer;font:inherit;font-size:13px;font-weight:600}
+.store.warn{color:var(--warn);background:var(--warn-bg);padding:3px 10px;border-radius:999px}
+.switch{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;cursor:pointer;user-select:none}
+.switch input{position:absolute;opacity:0}
+.switch .track{width:38px;height:22px;border-radius:999px;background:#B9C3CD;position:relative;transition:background .15s}
+.switch .track:after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch input:checked + .track{background:var(--cx)}
+.switch input:checked + .track:after{transform:translateX(16px)}
+.switch input:focus-visible + .track{outline:3px solid #1F5FBF;outline-offset:2px}
+
+/* manila folder tabs */
+.tabs{display:flex;align-items:flex-end;gap:4px;overflow-x:auto;scrollbar-width:thin}
+.tab{appearance:none;border:1px solid var(--line);border-bottom:0;background:#DEE4EA;color:var(--muted);padding:9px 18px;margin-top:8px;border-radius:12px 12px 0 0;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+.tab:hover{background:#E8ECF0;color:var(--ink)}
+.tab[aria-selected=true]{background:var(--folder);border-color:var(--folder-deep);color:var(--ink);margin-top:0;padding-top:15px;padding-bottom:13px;margin-bottom:-4px;position:relative;z-index:1}
+.sheet{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--folder);padding:26px 28px 44px;min-height:62vh;margin-bottom:40px}
+@media(max-width:640px){.sheet{padding:18px 14px 32px}.top h1{font-size:26px}}
+
+h2{font:600 22px/1.2 var(--display);margin:0 0 6px}
+h3{font:600 16px/1.3 var(--body);margin:0 0 6px}
+.lede{margin:0 0 18px;color:var(--ink)}
+.lede b{font-weight:700}
+.hint{color:var(--muted);font-size:13.5px;margin:0 0 8px}
+
+/* controls */
+.btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.primary:hover{background:#2A3A4B}
+.btn.danger{color:var(--bad);border-color:#E3B8B1}
+.btn.small{padding:4px 10px;font-size:13px}
+.linklike{appearance:none;background:none;border:0;padding:0;color:#15508F;text-align:left;cursor:pointer;font-weight:600}
+.linklike:hover{text-decoration:underline}
+label.f{display:block;font-weight:600;font-size:13.5px}
+label.f > span.l{display:block;margin-bottom:4px}
+input[type=text],input[type=password],input[type=date],input[type=time],select,textarea{width:100%;border:1px solid #B7C1CB;border-radius:8px;padding:8px 10px;background:#fff;font-weight:400}
+textarea{resize:vertical}
+select.compact{width:auto;padding:5px 8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{appearance:none;border:0;background:#fff;padding:8px 18px;font-weight:600;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+
+/* chips */
+.chip{display:inline-block;border-radius:6px;padding:1px 8px;font-size:12.5px;font-weight:700;color:#fff}
+.chip.cx{background:var(--cx)} .chip.sp{background:var(--sp)} .chip.none{background:#fff;color:var(--bad);border:1px solid var(--bad)}
+.st{font-weight:700;font-size:13px;white-space:nowrap}
+.st.verified{color:var(--ok)} .st.waiting{color:var(--warn)} .st.notcounted{color:var(--muted)}
+.st.waiting:before,.st.verified:before,.st.notcounted:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;margin-right:6px}
+.st.notcounted:before{background:none;border:2px solid currentColor;width:9px;height:9px}
+
+/* tables */
+.tscroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{font-size:13px;color:var(--muted);font-weight:600;border-bottom:2px solid var(--ink);white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:#FAFBFC}
+tr.fresh{background:#FFF8E3}
+tfoot td,tfoot th{font-weight:700;border-top:2px solid var(--ink);border-bottom:0}
+
+/* dashboard */
+.bar-row{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin:0 0 8px;flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.board td.scorecell{min-width:220px}
+.board .sc{display:flex;align-items:center;gap:12px}
+.board .sc b{font:600 26px/1 var(--display);min-width:38px;text-align:right}
+.board .bar{flex:1;height:16px;background:var(--soft);border-radius:4px;display:flex;overflow:hidden}
+.board .bar i{display:block;height:100%}
+.board .bar i.c{background:var(--cx)} .board .bar i.s{background:var(--sp)}
+.board th[scope=row]{font-weight:600}
+.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:34px;margin-top:34px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr;gap:26px}}
+.days{display:flex;align-items:flex-end;gap:3px;height:150px;border-bottom:1px solid var(--ink);padding-top:6px;overflow-x:auto}
+.day{flex:1 0 14px;display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative}
+.day .col{display:flex;flex-direction:column;justify-content:flex-end}
+.day .col i{display:block;width:100%}
+.day .col i.c{background:var(--cx)} .day .col i.s{background:var(--sp)} .day .col i.n{background:#B9C3CD}
+.daylabels{display:flex;gap:3px;font-size:11px;color:var(--muted);overflow:hidden}
+.daylabels span{flex:1 0 14px;text-align:center}
+.grid2 > *{min-width:0}
+.timing{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px 12px;align-items:center}
+.timing .tb{height:14px;background:var(--ink);border-radius:3px;min-width:2px}
+.att{list-style:none;padding:0;margin:0}
+.att li{padding:8px 0;border-bottom:1px solid var(--line)}
+.att li:last-child{border-bottom:0}
+
+/* cases */
+.filters{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin-bottom:12px}
+.filters .q{grid-column:span 1}
+@media(max-width:900px){.filters{grid-template-columns:repeat(2,1fr)}}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
+.banner{background:#E6F2F3;border:1px solid #B5D6D9;border-radius:8px;padding:10px 14px;margin-bottom:12px}
+.concern{max-width:320px}
+#caseBody td:nth-child(2){white-space:nowrap}
+#caseBody td:last-child{white-space:nowrap;width:1%}
+#caseBody td{padding:10px 8px}
+.rowact .btn.small{padding:4px 8px}
+@media(max-width:1200px){table:has(#caseBody) th:nth-child(6),#caseBody td:nth-child(6){display:none}.concern{max-width:260px}}
+.concern .ids{font-size:12.5px}
+.imgct{display:inline-flex;align-items:center;gap:5px;font-weight:600;color:var(--muted)}
+.empty{padding:34px 10px;color:var(--muted)}
+
+/* form */
+.formgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px 16px;max-width:920px}
+.formgrid > *{grid-column:span 2}
+.formgrid .w3{grid-column:span 3} .formgrid .w6{grid-column:1/-1}
+@media(max-width:760px){.formgrid > *,.formgrid .w3{grid-column:1/-1}}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.types label{border:2px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;display:block}
+.types input{position:absolute;opacity:0}
+.types label:has(input:checked){border-color:var(--ink);background:var(--soft)}
+.types label:has(input:focus-visible){outline:3px solid #1F5FBF;outline-offset:2px}
+.types b{display:block}
+.types small{color:var(--muted)}
+.zones{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:760px){.zones{grid-template-columns:1fr}}
+.drop{border:2px dashed #9FAEBB;border-radius:10px;padding:18px 12px;text-align:center;color:var(--muted);cursor:pointer;background:var(--soft)}
+.drop:hover,.drop.over{border-color:var(--ink);color:var(--ink);background:#fff}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:10px}
+.thumbs figure{margin:0;position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.thumbs img{display:block;width:100%;height:84px;object-fit:cover;cursor:zoom-in}
+.thumbs figcaption{display:flex;justify-content:space-between;align-items:center;gap:4px;padding:3px 6px;font-size:12px}
+.thumbs figcaption span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.err{color:var(--bad);font-weight:600;margin:10px 0 0}
+.actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+
+/* loop */
+.daychips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px}
+.daychips button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;font-weight:600;font-size:13.5px;cursor:pointer}
+.daychips button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.daychips button small{opacity:.7;font-weight:600;margin-left:4px}
+.card{border:1px solid var(--line);border-radius:10px;padding:16px 18px;background:var(--soft);margin-top:26px}
+.card.plain{background:#fff;margin-top:0}
+
+/* chips, sums, leave */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;min-height:4px}
+.tag{display:inline-flex;align-items:center;gap:6px;background:var(--soft);border:1px solid #B7C1CB;border-radius:999px;padding:2px 4px 2px 12px;font-weight:600;font-size:13px}
+.tag button{appearance:none;border:0;background:#DCE2E8;border-radius:50%;width:20px;height:20px;cursor:pointer;line-height:1;font-weight:700}
+.tag button:hover{background:#C9D1D9}
+.addrow{display:flex;gap:6px}
+.supplist{list-style:none;margin:10px 0;padding:0;max-height:300px;overflow:auto}
+.supplist li{display:flex;justify-content:space-between;align-items:center;padding:5px 2px;border-bottom:1px solid var(--line)}
+.figbtns{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:2px 6px 4px;font-size:12.5px}
+tr.sel{background:#FFF8E3}
+.dual{display:flex;flex-direction:column;gap:3px;min-width:160px}
+.dual i{display:block;height:7px;border-radius:2px}
+.dual i.a{background:#B9C3CD}.dual i.b{background:var(--cx)}
+.legend i.a{background:#B9C3CD}
+table.lv{width:auto;min-width:100%}
+.lv th,.lv td{padding:4px 2px;text-align:center;font-size:12px;border:1px solid var(--line);min-width:28px}
+.lv th:first-child,.lv td:first-child{text-align:left;padding:6px 10px;min-width:140px;position:sticky;left:0;background:#fff}
+.lv .we{background:#F1F3F5}
+.lv td.k{color:#fff;font-weight:700}
+.k-VL{background:#2F6DB5!important}.k-SL{background:#7B52A6!important}.k-EL{background:#B86E10!important}.k-ABS{background:#A63A2B!important}.k-RD{background:#6F7E8C!important}
+.lgd{display:inline-block;min-width:34px;text-align:center;border-radius:4px;color:#fff;font-weight:700;font-size:12px;padding:1px 6px;margin-right:6px}
+details.card > summary{cursor:pointer;font-weight:700}
+dl.meta dd{white-space:pre-wrap}
+
+.rowimgs{display:flex;gap:4px;align-items:center}
+.rowimgs button{appearance:none;border:1px solid var(--line);background:#fff;padding:0;border-radius:6px;overflow:hidden;cursor:zoom-in;width:44px;height:36px}
+.rowimgs img{display:block;width:100%;height:100%;object-fit:cover}
+.rowimgs .more{font-weight:700;font-size:12.5px;color:var(--muted)}
+.rowact{display:flex;gap:6px;flex-wrap:nowrap}
+.missing{display:flex;align-items:center;justify-content:center;height:84px;background:#FBEAE7;color:var(--bad);font-size:12px;padding:4px;text-align:center}
+#lightbox .cap .nav{display:flex;gap:6px;align-items:center}
+/* dialogs */
+dialog{border:0;border-radius:12px;padding:0;max-width:min(860px,94vw);width:100%;box-shadow:0 20px 60px rgba(10,20,30,.35)}
+dialog::backdrop{background:rgba(15,25,35,.55)}
+.dlg{padding:22px 24px 20px;max-height:86vh;overflow:auto}
+.dlg h2{margin-right:30px}
+dl.meta{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;margin:14px 0}
+dl.meta dt{color:var(--muted);font-size:13.5px}
+dl.meta dd{margin:0;overflow-wrap:anywhere}
+#lightbox{max-width:96vw;width:auto;background:#0E151C}
+#lightbox img{display:block;max-width:92vw;max-height:84vh;margin:0 auto}
+#lightbox .cap{color:#D6DEE6;padding:8px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+#lightbox .btn{background:#fff}
+
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;max-width:90vw}
+#toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){#toast,.switch .track,.switch .track:after{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Manila Escalation Case</h1>
+      <p>Post cases, attach agent conversations, verify and score.</p>
+    </div>
+    <div class="top-right">
+      <label class="switch"><input type="checkbox" id="verifier"><span class="track" aria-hidden="true"></span>Verify mode for Glenn</label>
+      <button id="stale" class="store warn" data-act="refreshView" hidden>New changes from the team. Refresh</button>
+      <span id="storeNote" class="store"></span>
+      <span id="who" class="store"></span><button class="linklike" id="signInBtn" data-act="openAuth" hidden>Glenn sign in</button><button class="linklike" id="signOutBtn" data-act="signOut" hidden>Sign out</button>
+    </div>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Sections" id="tabs"></nav>
+  <main class="sheet" id="view" role="tabpanel" tabindex="-1"></main>
+</div>
+
+<dialog id="detail"><div class="dlg" id="detailBody"></div></dialog>
+<dialog id="lightbox"><div class="cap"><span id="lbCap"></span><span class="nav"><button class="btn small" data-act="lbPrev" id="lbPrev">Previous</button><button class="btn small" data-act="lbNext" id="lbNext">Next</button><button class="btn small" data-act="closeLb">Close</button></span></div><img id="lbImg" alt=""></dialog>
+<dialog id="confirmDlg" style="max-width:440px"><div class="dlg"><p id="confirmMsg" style="margin-top:0"></p><div class="actions" style="margin-top:14px"><button class="btn danger" id="confirmOk">Confirm</button><button class="btn" id="confirmNo">Cancel</button></div></div></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="restoreFile" accept="application/json,.json" hidden>
+<datalist id="suppList"></datalist>
+<dialog id="authDlg" style="max-width:420px"><div class="dlg"><h2>Glenn sign in</h2>
+  <p class="hint">Only needed to approve cases. Everyone else can use the site without signing in.</p>
+  <label class="f"><span class="l">Email</span><input type="text" id="authEmail" autocomplete="username" inputmode="email"></label>
+  <label class="f" style="margin-top:10px"><span class="l">Password</span><input type="password" id="authPw" autocomplete="current-password"></label>
+  <p class="err" id="authErr" role="alert" hidden></p>
+  <div class="actions"><button class="btn primary" data-act="signIn">Sign in</button><button class="btn" onclick="document.getElementById('authDlg').close()">Cancel</button></div></div></dialog>
+<dialog id="suppDlg" style="max-width:460px"><div class="dlg"><h2>Supp list</h2>
+  <p class="hint">Names suggested when you type in Colab / Tucson supp. Removing a name here does not change old cases.</p>
+  <div class="addrow"><input type="text" id="suppNew" placeholder="Add a name" aria-label="New supp name"><button class="btn" data-act="suppAdd">Add</button></div>
+  <ul class="supplist" id="suppItems"></ul><div class="actions" style="margin-top:8px"><button class="btn" data-act="closeSupp">Done</button></div></div></dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script>
+'use strict';
+/* ------------------------------------------------------------------ seed */
+const SEED = {"cases": [{"id": "x0802", "month": "2026-08", "date": "2026-08-01", "time": "09:44", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "", "caseNo": "13832314", "concern": "SVB 1617200 | OTS 37025969 | HH5 loyalty error when processing any cards", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0803", "month": "2026-08", "date": "2026-08-03", "time": "00:53", "lead": "HAZEL MANEJA", "colab": "DIAL-IN TEAM", "serviceId": "", "caseNo": "", "concern": "[EXTERNAL] RE: Loyalty Finalization Message With Mobile Pay Ticket: VS-315487", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0804", "month": "2026-08", "date": "2026-08-04", "time": "15:17", "lead": "FRANK MOLINA", "colab": "", "serviceId": "", "caseNo": "", "concern": "Re: EBT Configuration Issue || 57542062906 || 00359118", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0805", "month": "2026-08", "date": "2026-08-04", "time": "14:48", "lead": "FRANK MOLINA", "colab": "", "serviceId": "4019432", "caseNo": "13859565", "concern": "VFI site details are missing", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0806", "month": "2026-08", "date": "2026-08-04", "time": "11:13", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "service id 1866244 C site backup /restore -SITE REBRAND", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0807", "month": "2026-08", "date": "2026-08-04", "time": "16:15", "lead": "KYLE SIOSON", "colab": "ROBERT HAYES", "serviceId": "7782143", "caseNo": "", "concern": "Loyalty Transactions Declining due to Product code issue | 13283580010 | 359303", "type": "Complex", "result": "Replied to the email", "took": "ROBERT HAYES", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0808", "month": "2026-08", "date": "2026-08-04", "time": "23:45", "lead": "KYLE SIOSON", "colab": "", "serviceId": "2145594", "caseNo": "13836932", "concern": "RubyCI Serial Incorrectly Labelled As Ruby2", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0809", "month": "2026-08", "date": "2026-08-05", "time": "08:44", "lead": "EDWIN CUESTA", "colab": "KRISTIN MANNING", "serviceId": "4265837", "caseNo": "", "concern": "ID# 4265837", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0810", "month": "2026-08", "date": "2026-08-05", "time": "14:45", "lead": "FRANK MOLINA", "colab": "", "serviceId": "4568283", "caseNo": "13863971", "concern": "Re: VFI site details are missing", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0811", "month": "2026-08", "date": "2026-08-05", "time": "13:48", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "[EXTERNAL] Re: ARCO 42295", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0812", "month": "2026-08", "date": "2026-08-06", "time": "09:54", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "[EXT] RE: Citgo Rewards and Graham Rewards - Stacking Question", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0813", "month": "2026-08", "date": "2026-08-06", "time": "11:32", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "[EXTERNAL] RE: Loyalty Finalization Message With Mobile Pay Ticket: VS-315487", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0814", "month": "2026-08", "date": "2026-08-06", "time": "08:29", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "5329900 Brand Conversion", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0815", "month": "2026-08", "date": "2026-08-06", "time": "06:38", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "RubyCI Serial Incorrectly Labelled As Ruby2", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0816", "month": "2026-08", "date": "2026-08-07", "time": "00:53", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "", "caseNo": "13869357", "concern": "OTS 37136130 || SVB 5760558 || Urgent/ Card Payments getting declined inside and outside the store", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0817", "month": "2026-08", "date": "2026-08-10", "time": "08:39", "lead": "FRANK MOLINA", "colab": "", "serviceId": "7782143", "caseNo": "13865185", "concern": "Re: Issues with Tap to Pay with few pumps | 13283580010", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0818", "month": "2026-08", "date": "2026-08-10", "time": "10:43", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "Chat Case Number:13881015", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0819", "month": "2026-08", "date": "2026-08-10", "time": "12:34", "lead": "FRANK MOLINA", "colab": "", "serviceId": "1941623", "caseNo": "13881710", "concern": "Re: Request for a callback / CASE# 13881377", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0820", "month": "2026-08", "date": "2026-08-10", "time": "16:14", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "Re: VFI site details are missing", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0821", "month": "2026-08", "date": "2026-08-13", "time": "11:54", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "4018393", "caseNo": "", "concern": "STN 306306 | SF Case # 07684745 | 08/18/2026 | P97/CTR Offline | Troubleshooting needed | Verifone Escalation | POWER PETROLEUM, INC.", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0822", "month": "2026-08", "date": "2026-08-13", "time": "14:11", "lead": "FRANK MOLINA", "colab": "", "serviceId": "1690540", "caseNo": "13896091", "concern": "Re: VFI site details are missing", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0823", "month": "2026-08", "date": "2026-08-14", "time": "21:40", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "", "caseNo": "7654675", "concern": "Case: 37180822 | SVB: 3218500 | Issue - All Fuel Dispensers Displaying \"Cancel\" Button Instead of Loyalty ID Button on Resting Screen", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0824", "month": "2026-08", "date": "2026-08-16", "time": "00:32", "lead": "FRANK MOLINA", "colab": "", "serviceId": "1726288", "caseNo": "", "concern": "Re: (57424232908-TRUE NORTH ENERGY LLC) Invenco Case #01948285. Verifone commander is offline", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0825", "month": "2026-08", "date": "2026-08-17", "time": "10:16", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "ASAP Market-5242989, Case Number : 01948844, OPT 3&4 Not dispensing fuel after paying", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0826", "month": "2026-08", "date": "2026-08-18", "time": "16:46", "lead": "KYLE SIOSON", "colab": "NATHAN MALIS", "serviceId": "", "caseNo": "", "concern": "Case: 37120996 | SVB: 9738584 | Issue - Earnify rewards not working", "type": "Simple", "result": "Replied to the email", "took": "NATHAN MALIS", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0827", "month": "2026-08", "date": "2026-08-19", "time": "06:24", "lead": "KYLE SIOSON", "colab": "", "serviceId": "1694014", "caseNo": "13894828", "concern": "VFI site details are missing", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0828", "month": "2026-08", "date": "2026-08-19", "time": "11:37", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "Tap to pay error = Tells you insert only one card at a time", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0829", "month": "2026-08", "date": "2026-08-20", "time": "11:13", "lead": "HAZEL MANEJA", "colab": "", "serviceId": "", "caseNo": "", "concern": "TOOT N TOTUM #86 / Service ID 2195742 / Case# 13921328", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0830", "month": "2026-08", "date": "2026-08-22", "time": "11:10", "lead": "KYLE SIOSON", "colab": "", "serviceId": "", "caseNo": "", "concern": "12858386001-ALLSTAR PETROLEUM INC. - Invenco Case: 01953203", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0831", "month": "2026-08", "date": "2026-08-22", "time": "11:15", "lead": "KYLE SIOSON", "colab": "", "serviceId": "", "caseNo": "", "concern": "Loyalty Transactions Declining due to Product code issue | 50438540010 | 360747", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0832", "month": "2026-08", "date": "2026-08-22", "time": "13:35", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "4051444", "caseNo": "", "concern": "[EXTERNAL] RE: #42670 Carpinteria - Day Close Errors & Missing Shifts", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0833", "month": "2026-08", "date": "2026-08-23", "time": "06:20", "lead": "FRANK MOLINA", "colab": "", "serviceId": "5419181", "caseNo": "", "concern": "(Arco Marathon #42969) Invenco Case # 01953496 (Unable to Prepay on pump #1)", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0834", "month": "2026-08", "date": "2026-08-23", "time": "06:55", "lead": "FRANK MOLINA", "colab": "", "serviceId": "3986223", "caseNo": "", "concern": "Re: (Arco Marathon #42452) Invenco Case # 01953463 . ( register displaying DCR Pol error )", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0835", "month": "2026-08", "date": "2026-08-24", "time": "03:13", "lead": "KYLE SIOSON", "colab": "", "serviceId": "", "caseNo": "13930669", "concern": "INC6024351 - VFI ||pos1||black screen", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0836", "month": "2026-08", "date": "2026-08-24", "time": "11:49", "lead": "FRANK MOLINA", "colab": "", "serviceId": "2100526", "caseNo": "13937081", "concern": "Re: The macchia group Invenco Case #01954478. Verifone commander is offline and not able to dispense fuel and alarm cannot be turned off.", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0837", "month": "2026-08", "date": "2026-08-24", "time": "14:45", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "1696771", "caseNo": "13930253", "concern": "[EXTERNAL] RE: Arco / VRSD UPGRADE REQUEST- HPS-550209/ Case# 13930253", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0838", "month": "2026-08", "date": "2026-08-25", "time": "09:38", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "1963223", "caseNo": "13930268", "concern": "[EXTERNAL] Re: Case #13930268 - VRSD Issue at Verifone", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0839", "month": "2026-08", "date": "2026-08-26", "time": "11:50", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "7288330", "caseNo": "", "concern": "4 CORNERS CONVENIENCE - Site 92554042 - Service 7288330", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0840", "month": "2026-08", "date": "2026-08-26", "time": "07:07", "lead": "KYLE SIOSON", "colab": "", "serviceId": "", "caseNo": "", "concern": "S/N missing from SFL and Premier", "type": "Simple", "result": "Replied to the email", "took": "KRISTIN MANNING", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0841", "month": "2026-08", "date": "2026-08-27", "time": "18:24", "lead": "KYLE SIOSON", "colab": "", "serviceId": "", "caseNo": "", "concern": "Loyalty Transactions Declining at Pumps after upgrade | 10011218004 | 360817", "type": "Simple", "result": "Replied to the email", "took": "ROBERT HAYES", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0842", "month": "2026-08", "date": "2026-08-28", "time": "18:41", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "", "caseNo": "13944324", "concern": "SVB 3080935 | OTS case # 37332631 | Alternate ID Authorizing Loyalty Issue", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0843", "month": "2026-08", "date": "2026-08-30", "time": "23:38", "lead": "KYLE SIOSON", "colab": "", "serviceId": "", "caseNo": "", "concern": "Long hold time of over 25 minutes", "type": "Simple", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0844", "month": "2026-08", "date": "2026-09-01", "time": "01:49", "lead": "KYLE SIOSON", "colab": "", "serviceId": "", "caseNo": "", "concern": "Please attend this email. [ ref:!00D4P010NXY.!500Vy01sH0bu:ref ]", "type": "Complex", "result": "Replied to the email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0902", "month": "2026-09", "date": "2026-09-03", "time": "05:59", "lead": "KYLE SIOSON", "colab": "", "serviceId": "", "caseNo": "", "concern": "Please attend this email. [ ref:!00D4P010NXY.!500Vy01sH0bu:ref ]", "type": "Complex", "result": "Replied to Email", "took": "", "vf": "Yes", "remarks": "", "instruction": "", "images": []}, {"id": "x0903", "month": "2026-09", "date": "2026-09-10", "time": "20:39", "lead": "KYLE SIOSON", "colab": "", "serviceId": "", "caseNo": "13966351", "concern": "Case 13966351", "type": "Simple", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0904", "month": "2026-09", "date": "2026-09-16", "time": "12:03", "lead": "FRANK MOLINA", "colab": "", "serviceId": "5173850", "caseNo": "", "concern": "Re: Site 42870", "type": "Simple", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0905", "month": "2026-09", "date": "2026-09-17", "time": "22:39", "lead": "FRANK MOLINA", "colab": "", "serviceId": "2425930", "caseNo": "", "concern": "Re: customer unable to reach HD", "type": "Simple", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0906", "month": "2026-09", "date": "2026-09-18", "time": "19:47", "lead": "KYLE SIOSON", "colab": "", "serviceId": "4264793", "caseNo": "14044837", "concern": "Re:", "type": "Simple", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0907", "month": "2026-09", "date": "2026-09-18", "time": "03:16", "lead": "KYLE SIOSON", "colab": "", "serviceId": "5067729", "caseNo": "14045339/14045655", "concern": "Request for Root Cause Analysis – Store Transaction Stop Error - Sunoco 7-Eleven Store #40292", "type": "Complex", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0908", "month": "2026-09", "date": "2026-09-18", "time": "08:54", "lead": "KYLE SIOSON", "colab": "", "serviceId": "", "caseNo": "14028598", "concern": "SVB# 9333520 | OTS#37569975 |Earnify is not working at the pumps", "type": "Complex", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0909", "month": "2026-09", "date": "2026-09-19", "time": "23:46", "lead": "KYLE SIOSON", "colab": "", "serviceId": "5314853/5314854", "caseNo": "13949130/13970586", "concern": "Need ASM re-added for two sites", "type": "Complex", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0910", "month": "2026-09", "date": "2026-09-22", "time": "12:57", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "5070765", "caseNo": "13970443", "concern": "[EXTERNAL] Re: Dealer 256032 - Case #13970443", "type": "Complex", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0911", "month": "2026-09", "date": "2026-09-22", "time": "18:47", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "", "caseNo": "14060882", "concern": "VFI site details are missing", "type": "Simple", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0912", "month": "2026-09", "date": "2026-09-22", "time": "", "lead": "FRANK MOLINA", "colab": "", "serviceId": "", "caseNo": "4057001", "concern": "Re: Call back request. cn14057001", "type": "Complex", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0913", "month": "2026-09", "date": "2026-09-24", "time": "22:32", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "", "caseNo": "13971243", "concern": "SVB 1350400 | OTS 37684043 | Loyalty Prompts Not Displaying on Fuel Dispensers (VF Ticket #13971243)", "type": "Complex", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0914", "month": "2026-09", "date": "2026-09-25", "time": "09:27", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "4541910", "caseNo": "", "concern": "Beta upgrade 55.02.12", "type": "Complex", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0915", "month": "2026-09", "date": "2026-09-25", "time": "10:19", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "", "caseNo": "14070792", "concern": "Site 203721 - VHD Case", "type": "Simple", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0916", "month": "2026-09", "date": "2026-09-27", "time": "13:14", "lead": "EDWIN CUESTA", "colab": "", "serviceId": "", "caseNo": "14079498", "concern": "Re: VFI site details are missing", "type": "Simple", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}, {"id": "x0917", "month": "2026-09", "date": "", "time": "10:26", "lead": "FRANK MOLINA", "colab": "", "serviceId": "7826376", "caseNo": "14094845", "concern": "RE: Few Fueling Points are Declining on New Shell Site | 13274785016 | 366454", "type": "Complex", "result": "Replied to Email", "took": "", "vf": "", "remarks": "", "instruction": "", "images": []}], "loop": [{"date": "2026-08-01", "email": "https://verifone.atlassian.net/browse/VS-308169", "issue": "Follow Jacobs instructions in ticket", "assigned": "Ashley"}, {"date": "2026-08-01", "email": "https://verifone.atlassian.net/browse/VS-306538", "issue": "Getting logs per Jeff's instructions in the ticket.", "assigned": "Ashley"}, {"date": "2026-08-01", "email": "Sunshine Gas Issue", "issue": "Educate Chevron on what Viperpay is?", "assigned": ""}, {"date": "2026-08-01", "email": "FW: C18 Lockups - Escalation request for service ID 2665047", "issue": "waiting for reply for better contact #", "assigned": "Robert/Ashley"}, {"date": "2026-08-01", "email": "Awareness of additional Wells 351 Debit Key - Potential KB Update/Creation?", "issue": "Update or create KB / thoughts on updating 6121?", "assigned": "Kristin?"}, {"date": "2026-08-01", "email": "RE: Service Id # 7747450", "issue": "Scanner issue continued", "assigned": "Andrew/CICI"}, {"date": "2026-08-02", "email": "Sunshine Gas Issue", "issue": "Educate Chevron on what Viperpay is?", "assigned": ""}, {"date": "2026-08-02", "email": "FW: C18 Lockups - Escalation request for service ID 2665047", "issue": "waiting for reply for better contact #", "assigned": "Robert/Ashley"}, {"date": "2026-08-02", "email": "Awareness of additional Wells 351 Debit Key - Potential KB Update/Creation?", "issue": "Update or create KB / thoughts on updating 6121?", "assigned": "Kristin?"}, {"date": "2026-08-02", "email": "RE: Service Id # 7747450", "issue": "Scanner issue continued", "assigned": "Andrew/CICI"}, {"date": "2026-08-03", "email": "Loyalty Transactions Declining due to Product code issue | 13283580010 | 359303", "issue": "Declining loyalty due to duplicate product code", "assigned": "Kyle Brandon Sioson"}, {"date": "2026-08-03", "email": "INC-000097639: vlro00191v / vlr2820510541v - Loyalty NOT Working", "issue": "Waiting for TNSI response in Email - Internet Verification to Loyalty from Commander - following up tromorrow", "assigned": "William"}, {"date": "2026-08-03", "email": "Awareness of additional Wells 351 Debit Key - Potential KB Update/Creation?", "issue": "Update or create KB / thoughts on updating 6121?", "assigned": "Kristin?"}, {"date": "2026-08-03", "email": "Kent Distributors MIIP Data Missing", "issue": "Waiting for time to callback from Brandon and Jeff", "assigned": "William"}, {"date": "2026-08-03", "email": "Sunshine Gas Issue", "issue": "Educate Chevron on what Viperpay is?", "assigned": ""}, {"date": "2026-08-03", "email": "SVB 3312300 | OTS ticket #36985999 | BP Visa card discount", "issue": "Resolved", "assigned": "William"}, {"date": "2026-08-03", "email": "RE: Service Id # 7747450", "issue": "Scanner issue continued", "assigned": "Andrew/CICI"}, {"date": "2026-08-03", "email": "FW: C18 Lockups - Escalation request for service ID 2665047", "issue": "waiting for reply for better contact # Callback set up for 8/4/26", "assigned": "Kristin"}, {"date": "2026-08-03", "email": "Serial Number Update in Verifone Commander Central", "issue": "Reviewing/Replied", "assigned": "Vineed"}, {"date": "2026-08-04", "email": "Re: 860- fleet cards at the pumps", "issue": "reviewing", "assigned": "Nicole"}, {"date": "2026-08-04", "email": "Case notes please", "issue": "Replied, we should take a deeper look at reports; awaiting his reply", "assigned": "Andrew"}, {"date": "2026-08-04", "email": "Verifone Case # 13854295", "issue": "Colin asking for case notes, notes are trash; reviewing, can assign to front-line agent, awaiting his reply", "assigned": "Andrew"}, {"date": "2026-08-04", "email": "SVB# 6235221 | OTS#37069028 |facing issues in Earnify loyalty", "issue": "", "assigned": "William"}, {"date": "2026-08-04", "email": "Re: Debit Not working due to MOP not allowed Error | 13208883010 | 359206", "issue": "", "assigned": "Renard/Edwin"}, {"date": "2026-08-04", "email": "Awareness of additional Wells 351 Debit Key - Potential KB Update/Creation?", "issue": "Update or create KB / thoughts on updating 6121?", "assigned": "Kristin?"}, {"date": "2026-08-04", "email": "VFI site details are missing", "issue": "", "assigned": "Frank"}, {"date": "2026-08-04", "email": "SVB#3126332 | OTS Case#36918188 - Earnify loyalty not working, since new commander installed", "issue": "", "assigned": "Nathan/ Will"}, {"date": "2026-08-04", "email": "Case 13853384", "issue": "", "assigned": "William"}, {"date": "2026-08-04", "email": "INC-000097639: vlro00191v / vlr2820510541v - Loyalty NOT Working", "issue": "Waiting for TNSI response in Email - Internet Verification to Loyalty from Commander - following up tromorrow", "assigned": "William"}, {"date": "2026-08-04", "email": "C18 Lockups - Escalation request for service ID 2665047", "issue": "Logs pulled and escalated on VS-318138", "assigned": "William"}, {"date": "2026-08-04", "email": "Service ID: 1687275 - Serial number needs to be updated", "issue": "Review/Replied", "assigned": "Vineed"}, {"date": "2026-08-04", "email": "service id 1866244 C site backup /restore -SITE REBRAND", "issue": "", "assigned": "Hazel - replied"}, {"date": "2026-08-04", "email": "Re: EBT Configuration Issue || 57542062906 || 00359118", "issue": "Configuration checking", "assigned": "Frank/Vineed"}, {"date": "2026-08-04", "email": "Loyalty Transactions Declining due to Product code issue | 13283580010 | 359303", "issue": "Declining loyalty due to duplicate product code - This site needs to call in for this issue.", "assigned": "Kyle Brandon Sioson Robert/David"}, {"date": "2026-08-04", "email": "FW: Commander Central Serial Number Updates", "issue": "Reviewing/Replied", "assigned": "Vineed"}, {"date": "2026-08-05", "email": "Beck's Oil Commander Fleet issue", "issue": "REVIEW 8/5 / Site will call in tomorrow; setting callback up, please check account and possibly reach out if they haven't called in yet (see details on cb)", "assigned": "Andrew"}, {"date": "2026-08-05", "email": "Case 13816894 - Service ID overlap?", "issue": "Site has two Commanders. Reviewing - following up tomorrow morning", "assigned": "Andrew / Will"}, {"date": "2026-08-05", "email": "SVB: 2569000| OTS: 37107115| issue: Bp loyalty is not working", "issue": "Hindi agent borked this one, we should reach out", "assigned": "Nathan / William"}, {"date": "2026-08-05", "email": "RubyCI Serial Incorrectly Labelled As Ruby2", "issue": "Needing picture / checking", "assigned": "Kyle/ Hazel"}, {"date": "2026-08-05", "email": "ID# 4265837", "issue": "requesting a reimbursement of $80.64 for a lost sale", "assigned": "Edwin/Kristin"}, {"date": "2026-08-05", "email": "Tap to Pay not working || 13862949 || 00359358", "issue": "Cici will call > L2", "assigned": "Andrew / Cici"}, {"date": "2026-08-05", "email": "[EXTERNAL] Re: ARCO 42295", "issue": "working with Jeff", "assigned": "Hazel"}, {"date": "2026-08-05", "email": "Case notes please", "issue": "Replied, referred for dcr firmware update", "assigned": "Andrew/albert-"}, {"date": "2026-08-05", "email": "Re: Successful transactions are getting captured as drive off || 12888262016 || 00357539", "issue": "New Logs - advising site to not run inits", "assigned": "Robert/David"}, {"date": "2026-08-05", "email": "SVB# 6235221 | OTS#37069028 |facing issues in Earnify loyalty", "issue": "", "assigned": "William"}, {"date": "2026-08-05", "email": "Verifone Ticket Number 13793550 Service ID 5880823", "issue": "", "assigned": "William , Nathan, Cody"}, {"date": "2026-08-05", "email": "Re: 860- fleet cards at the pumps", "issue": "reviewing - Doesn't look like anything is needed from us.", "assigned": "Nicole"}, {"date": "2026-08-05", "email": "Site upgrading to 55.02.11", "issue": "", "assigned": "Kristin"}, {"date": "2026-08-05", "email": "Verifone Case # 13854295", "issue": "Colin asking for case notes, notes are trash; reviewing, can assign to front-line agent, awaiting his reply / Crossing out until they reply. Our part is done.", "assigned": "Andrew"}, {"date": "2026-08-05", "email": "Re: Debit Not working due to MOP not allowed Error | 13208883010 | 359206", "issue": "", "assigned": "Renard/Edwin"}, {"date": "2026-08-05", "email": "RE: VFI site details are missing", "issue": "Replied", "assigned": "Vineed"}, {"date": "2026-08-06", "email": "Case: 37134235 | SVB: 2619700 | Issue - Discounts not applying inside and outside", "issue": "call back tomorrow AM, advising Buypass is still showing this as chevron site asking them to confirm.", "assigned": "Nathan / will"}, {"date": "2026-08-06", "email": "Case: 37120996 | SVB: 9738584 | Issue - Earnify rewards not working", "issue": "may need to confirm config and attempt elevated deletion", "assigned": "Will/ Nathan"}, {"date": "2026-08-06", "email": "860- fleet cards at the pumps", "issue": "PCATS10 card showing not showing in CCentral but showing in Config", "assigned": "William"}, {"date": "2026-08-06", "email": "Case 13860011", "issue": "tied to email / RE: Service ID 401709 / logs already pulled", "assigned": "Robert/Albert--log pull submitted"}, {"date": "2026-08-06", "email": "ID# 4265837", "issue": "requesting a reimbursement of $80.64 for a lost sale", "assigned": "Edwin/Kristin"}, {"date": "2026-08-06", "email": "INCOMING CALL - SPYGLASS SHELL (NEED ASSISTANCE)", "issue": "From Tony, will assign a frontline", "assigned": "Andrew / Cici"}, {"date": "2026-08-06", "email": "Awareness of additional Wells 351 Debit Key - Potential KB Update/Creation?", "issue": "Updated KB 6121", "assigned": "Kristin/Hazel"}, {"date": "2026-08-06", "email": "Beck's Oil Commander Fleet issue", "issue": "Site believes it is one customer's card, will email again if help needed", "assigned": "Andrew/Albert"}, {"date": "2026-08-06", "email": "[EXT] RE: Citgo Rewards and Graham Rewards - Stacking Question", "issue": "checking", "assigned": "Hazel"}, {"date": "2026-08-06", "email": "SVB: 2569000| OTS: 37107115| issue: Bp loyalty is not working", "issue": "Call back at 1:30 PM", "assigned": "Nathan / William"}, {"date": "2026-08-06", "email": "Wesco Help on Ticket #13845588", "issue": "", "assigned": "William / Kristin"}, {"date": "2026-08-06", "email": "5329900 Brand Conversion", "issue": "", "assigned": "Hazel"}, {"date": "2026-08-06", "email": "RubyCI Serial Incorrectly Labelled As Ruby2", "issue": "Needing picture / checking", "assigned": "Kyle Brandon Sioson/ Hazel"}, {"date": "2026-08-06", "email": "Case 13816894 - Service ID overlap?", "issue": "Site has two Commanders. Reviewing - following up tomorrow morning", "assigned": "Andrew / Will"}, {"date": "2026-08-07", "email": "Recent Commander Central Serial # Swap Requests unresolved", "issue": "Reviewing", "assigned": "Kristin/Vineed"}, {"date": "2026-08-07", "email": "INCOMM - Escalation Request - Case #13845524", "issue": "Incomm cards are not scanning, asking for swipe and stopping tnx.", "assigned": "Albert"}, {"date": "2026-08-07", "email": "Case: 37120996 | SVB: 9738584 | Issue - Earnify rewards not working", "issue": "may need to confirm config and attempt elevated deletion", "assigned": "Will/ Nathan"}, {"date": "2026-08-07", "email": "860- fleet cards at the pumps", "issue": "PCATS10 card showing not showing in CCentral but showing in Config. Waiting to hear back from dev", "assigned": "Kristin/ William"}, {"date": "2026-08-07", "email": "ID# 4265837", "issue": "requesting a reimbursement of $80.64 for a lost sale", "assigned": "Edwin/Kristin"}, {"date": "2026-08-07", "email": "Case: 37134235 | SVB: 2619700 | Issue - Discounts not applying inside and outside", "issue": "call back tomorrow AM, advising Buypass is still showing this as chevron site asking them to confirm.", "assigned": "Nathan / will"}, {"date": "2026-08-07", "email": "Case 13860011", "issue": "tied to email / RE: Service ID 401709 / logs already pulled", "assigned": "Robert/Albert--log pull submitted"}, {"date": "2026-08-07", "email": "Re: OTS 37136130 || SVB 5760558 || Urgent/ Card Payments getting declined inside and outside the store", "issue": "Replied", "assigned": "Ed/Vineed"}, {"date": "2026-08-08", "email": "Recent Commander Central Serial # Swap Requests unresolved", "issue": "Reviewing", "assigned": "Kristin/Vineed"}, {"date": "2026-08-08", "email": "INCOMM - Escalation Request - Case #13845524", "issue": "Incomm cards are not scanning, asking for swipe and stopping tnx.", "assigned": "Albert"}, {"date": "2026-08-08", "email": "Case: 37120996 | SVB: 9738584 | Issue - Earnify rewards not working", "issue": "may need to confirm config and attempt elevated deletion", "assigned": "Will/ Nathan"}, {"date": "2026-08-08", "email": "860- fleet cards at the pumps", "issue": "PCATS10 card showing not showing in CCentral but showing in Config. Waiting to hear back from dev", "assigned": "Kristin/ William"}, {"date": "2026-09-01", "email": "RE: 1st in Queue status", "issue": "No account info provided", "assigned": ""}, {"date": "2026-09-01", "email": "RE: Beck's Oil Commander Fleet issue", "issue": "Dev Dusty is handling nothing needed by HD at moment", "assigned": ""}, {"date": "2026-09-01", "email": "RE: SVB: 2569465| OTS: 37344626| Earnify Not Available at Pumps", "issue": "", "assigned": "David"}, {"date": "2026-09-01", "email": "SVB#2993900 |OTS#37316240 | Loyalty not working.", "issue": "", "assigned": ""}, {"date": "2026-09-01", "email": "Re: GVG 55 Troubleshooting for Kiosk troubleshooting", "issue": "", "assigned": ""}, {"date": "2026-09-01", "email": "ARCO 22272 / 7814201", "issue": "Site hasn't called in , site need to call in", "assigned": "Kristin replied"}, {"date": "2026-09-01", "email": "Re: Exxon Base 55.02.07 Duplicate Transaction Issue", "issue": "", "assigned": "Albert-pulled logs and replied"}, {"date": "2026-09-01", "email": "SVB#9323239 | OTS Case#37117701 - Contactless Payments Not Working on Inside POS", "issue": "replied", "assigned": "Nathan"}, {"date": "2026-09-01", "email": "RE: [EXTERNAL] loyalty finalization issue with mobile payment", "issue": "log pull", "assigned": "Albert-log already pull for Jeff"}, {"date": "2026-09-01", "email": "RE: Store #2 update", "issue": "", "assigned": "Kristin/Albert -replied"}, {"date": "2026-09-01", "email": "[EXTERNAL] RE: Chevron 385106: DRP Rollback request", "issue": "Replied; if they give a contact, I will assign a frontline (or please assign someone if I'm not in yet)", "assigned": "Andrew"}, {"date": "2026-09-01", "email": "RE: Urgent Investigation Required: Shell Fuel Rewards Transactions Stopping at 10-Gallon Limit || 12994062011 || 00362016", "issue": "Fuel config need to be correct unused should be None", "assigned": "Albert-replied to email"}, {"date": "2026-09-01", "email": "RE: Intermittent card transactions declined || 57526140900 || 00361781", "issue": "", "assigned": "David"}, {"date": "2026-09-01", "email": "Requesting case history on service ID 6202591 - SUNNY SIDE FOOD MART", "issue": "Reviewing/Replied", "assigned": "Vineed"}, {"date": "2026-09-01", "email": "FW: BusinessPro card issue - PBL 329345 @ PALM BEACH GARDENS (Verifone ticket number 13785170)", "issue": "Reviewing/Replied", "assigned": "Rob/Vineed"}, {"date": "2026-09-01", "email": "RE: NTP Server Access", "issue": "need someone to explain how the server updates", "assigned": "Albert-replied"}, {"date": "2026-09-01", "email": "Case - 13960183 & 13960836 | Service ID 7334889 - Applegreen store Unbale to process cards since Friday", "issue": "Waiting for time and POC to reach out to and work on network issues. Did agents enable token before trying to connect?", "assigned": "Nicole / ashley- issue was resolved"}, {"date": "2026-09-01", "email": "Fw: Verifone Commander Payments- Foodie's Corner - Liberty Hill", "issue": "", "assigned": "Albert submitted log pull"}, {"date": "2026-09-04", "email": "[EXTERNAL]Disabling the FEP for Skupos", "issue": "CALLBACK FOR 9/8", "assigned": "Kristin / Ashley"}, {"date": "2026-09-04", "email": "C-Site Serial Number update", "issue": "serial move needed", "assigned": "No asignee"}, {"date": "2026-09-04", "email": "Mobile Transactions Not Completing - 80006157", "issue": "Will worked this, findings in thread.", "assigned": "No asignee"}, {"date": "2026-09-04", "email": "Service ID 1770694", "issue": "CALLBACK 9/4", "assigned": "Andrew / Anila / Kristin"}, {"date": "2026-09-04", "email": "322 KDS not syncing on commander.", "issue": "CALLBACK 9/4 - Japteg Singh", "assigned": "Andrew / Japteg / Omar for 327"}, {"date": "2026-09-04", "email": "RE: [EXTERNAL] RE: Site 42631 - Case# 13978795", "issue": "follow up at 2 pm", "assigned": "Albert- completed replied"}, {"date": "2026-09-04", "email": "SVB #3257700 | OTS #37316931 | Earnify loyalty is not working", "issue": "call back scheduled", "assigned": "david"}, {"date": "2026-09-04", "email": "RE: 1st in Queue status", "issue": "No account info provided", "assigned": "Eric- albert - replied"}, {"date": "2026-09-04", "email": "RE: SVB#2993900 |OTS#37316240 | Loyalty not working.", "issue": "", "assigned": "Ashley-callback setup -replied"}, {"date": "2026-09-04", "email": "STN 391559 | NTC Site Installation (TopazCmdr & 8.54.02.01) | SF#07752206", "issue": "Asked for site info. PDL is not downloading and spamming every 10 mins on Chevron side.", "assigned": "Resolved per thread"}, {"date": "2026-09-04", "email": "ARCO 42531", "issue": "Same site for both threads", "assigned": "Nicole / Open"}, {"date": "2026-09-04", "email": "RE: STN 306306 | SF Case # 07684745 | 08/18/2026 | P97/CTR Offline | Troubleshooting needed | Verifone Escalation | POWER PETROLEUM, INC.", "issue": "Scheduled callback for 830 am on Monday sept 7th", "assigned": "Ashley- replied"}, {"date": "2026-09-04", "email": "FW:[External] RE: PLSO Escalation - RITM22783671 - Site ID: 4840484 - EM Rewards Potential Fraud Assistance", "issue": "Need to investigate possible fraud issues. Where is VFI scope on this?", "assigned": "David"}, {"date": "2026-09-04", "email": "SVB# 1993856| OTS Case# 37405676 | Earnify not working", "issue": "Replied", "assigned": "Robert"}, {"date": "2026-09-04", "email": "REBEL #814 - Verifone Case #13976673 - Register Printer", "issue": "", "assigned": "Nicole / Ashley"}, {"date": "2026-09-04", "email": "RE: Payment issues inside and out // 57542933601 // 00362223", "issue": "Replied with ESG Findings", "assigned": "Robert"}, {"date": "2026-09-04", "email": "Verifone POS Ref:25037797", "issue": "advised 2 weeks ago for contracts to look at this/ forwarded to Tony for assistance", "assigned": "Robert/contracts"}, {"date": "2026-09-05", "email": "[EXTERNAL]Disabling the FEP for Skupos", "issue": "", "assigned": "Kristin / Ashley"}, {"date": "2026-09-05", "email": "C-Site Serial Number update", "issue": "serial move needed", "assigned": "No asignee"}, {"date": "2026-09-05", "email": "Mobile Transactions Not Completing - 80006157", "issue": "Will worked this, findings in thread.", "assigned": "No asignee"}, {"date": "2026-09-05", "email": "Service ID 1770694", "issue": "CALLBACK 9/4", "assigned": "Andrew / Anila / Kristin"}, {"date": "2026-09-05", "email": "Please attend this email. [ ref:!00D4P010NXY.!500Vy01sH0bu:ref ]", "issue": "Replied to email", "assigned": "Kyle Brandon Sioson"}], "supps": ["ALBERT ANAYA", "ANDREW MARSH", "ANNIE ROSAS", "CHRONIC ISSUE - ERIC", "CODY BUSHEY", "CONTRACT TEAM", "DAVID HILTON", "DIAL-IN TEAM", "DISPATCH TEAM", "DUSTY RUSELL", "EDWIN CUESTA", "ERIC JEWELL", "ERIC JEWELL / NATHAN MALIS", "FRANK MOLINA", "GARY ROGERS", "GREGORY TAYLOR", "HAZEL M & KENNETH H", "HAZEL M & KRISTIN M", "HAZEL M & MATHEW W", "HAZEL M & NATHAN M.", "HAZEL M & NICOLAUS", "HAZEL M. & ANDREW S.", "HAZEL MANEJA", "JACOB LONG", "JEFF TEMME", "JOSEPH RAMIREZ", "JUDY TOLENTINO", "KENNETH HURSH", "KRISTIN MANNING", "KRISTIN MANNING / KYLE", "KYLE WOOD", "MATTHEW WARREN", "MNL ESCA KYLE/T3 JAMES W", "NATHAN & JOSEPH", "NATHAN & MATHEW", "NATHAN & NICOLAUS", "NATHAN MALIS", "NICOLAUS WEATHERS", "NO PREV CASE (SITE WILL CALLBACK)", "NO SUP NEEDED - ALL WORKING", "NO SUP NEEDED - ALL WORKING (After TS)", "NO SUP NEEDED - ANS BASE ON KB", "NO SUP NEEDED - DISPATCH REVIEW", "NO SUP NEEDED - HD Refer to Technician", "NO SUP NEEDED - REVIEW (LOG PULL)", "NO SUP NEEDED - SENDING LOG PULL", "NO SUP NEEDED - VERIFYING CONFIG", "NO SUPP NEEDED - CASE REVIEW", "NO SUPP NEEDED - JIRA TICKET REVIEW", "ROBERT HAYES", "SHELL MISSING DETAILS", "TUCSON SUP TOOK OVER", "WILLIAM G.", "VINEED ALEXANDER"]};
+
+/* ---------------------------------------------------------------- Firebase
+   Paste your Firebase web app settings below (Firebase console > Project settings > Your apps).
+   While apiKey and projectId are empty, the site runs in local mode and keeps data in this browser only. */
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyCowLlYCtPufSMQl42Y_7SRB3ngHRbUDwQ',
+  authDomain: 'escalation-case.firebaseapp.com',
+  projectId: 'escalation-case',
+  appId: '1:231558859297:web:7c3f547b93707930693160'
+};
+const SIGNIN_MICROSOFT = false;          // set true after enabling the Microsoft provider in Firebase Authentication
+const FIREBASE_VERSION = '10.14.1';
+const CLOUD = !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
+
+/* ------------------------------------------------------------ constants */
+const POINTS = { Complex: 3, Simple: 1 };
+const DEFAULT_LEADS = ['EDWIN CUESTA','FRANK MOLINA','HAZEL MANEJA','KYLE SIOSON'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const TABS = [['dash','Dashboard'],['cases','Cases'],['post','Post a case'],['loop','Loop daily list'],['leave','Leave and absence'],['export','Export']];
+
+/* -------------------------------------------------------------- helpers */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const title = s => String(s || '').toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase());
+const monthLabel = k => { const [y, m] = k.split('-'); return MONTHS[+m - 1] + ' ' + y; };
+const dObj = d => new Date(d + 'T12:00:00');
+const fmtDay = (d, o) => d ? dObj(d).toLocaleDateString('en-US', o || { month: 'short', day: 'numeric' }) : 'No date';
+const pad = n => String(n).padStart(2, '0');
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const fmtTime = t => { if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${h % 12 || 12}:${pad(m)} ${h < 12 ? 'AM' : 'PM'}`; };
+const pct = x => x == null ? '—' : (x * 100).toFixed(1) + '%';
+const uid = () => 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const clone = o => JSON.parse(JSON.stringify(o));
+const plural = (n, w) => `${n} ${n === 1 ? w : /[^aeiou]y$/.test(w) ? w.slice(0, -1) + 'ies' : w + 's'}`;
+const isoOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const addDays = (iso, n) => { const d = dObj(iso); d.setDate(d.getDate() + n); return isoOf(d); };
+const weekStart = iso => { const d = dObj(iso); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return isoOf(d); };
+const eachDay = (from, to) => { const out = []; if (!from) return out; to = to && to >= from ? to : from; for (let d = from, n = 0; d <= to && n < 400; d = addDays(d, 1), n++) out.push(d); return out; };
+/* A VS ticket is an entry that starts with VS-1234, with or without the Jira link in front. Those are not counted. */
+const isVS = e => /^\s*(https?:\/\/\S*\/browse\/)?VS-\d+/i.test(e || '');
+const LEAVE = { VL: 'Vacation leave', SL: 'Sick leave', EL: 'Emergency leave', ABS: 'Absent', RD: 'Rest day' };
+function newDraft() { return { images: [], colab: [] }; }
+
+function periodOf(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number), x = h * 60 + m;
+  return x >= 540 && x < 1020 ? 'PRIME' : x >= 300 && x < 540 ? 'EARLY' : 'LATE';
+}
+const isVerified = c => c.vf === 'Yes';
+const statusOf = c => c.vf === 'Yes' ? 'verified' : c.vf === 'No' ? 'notcounted' : 'waiting';
+const statusText = { verified: 'Verified', waiting: 'Waiting', notcounted: 'Not counted' };
+const pointsOf = c => isVerified(c) ? (POINTS[c.type] || 0) : 0;
+
+let toastT;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600);
+}
+function askConfirm(msg, ok = 'Confirm') {
+  return new Promise(res => {
+    const d = $('#confirmDlg'); $('#confirmMsg').textContent = msg; $('#confirmOk').textContent = ok;
+    const done = v => { d.close(); $('#confirmOk').onclick = $('#confirmNo').onclick = null; res(v); };
+    $('#confirmOk').onclick = () => done(true); $('#confirmNo').onclick = () => done(false);
+    d.showModal();
+  });
+}
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* -------------------------------------------------------------- storage */
+const Store = (() => {
+  let db = null; const mem = { kv: {}, img: {} };
+  const os = (st, mode) => db.transaction(st, mode).objectStore(st);
+  const rq = r => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+  return {
+    get persistent() { return !!db; },
+    async open() {
+      try {
+        db = await new Promise((ok, no) => {
+          const r = indexedDB.open('manila-escalation-case', 1);
+          r.onupgradeneeded = () => { r.result.createObjectStore('kv'); r.result.createObjectStore('img'); };
+          r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); r.onblocked = () => no(new Error('blocked'));
+        });
+      } catch (e) { db = null; }
+    },
+    async get(st, k) { if (!db) return mem[st][k]; try { return await rq(os(st, 'readonly').get(k)); } catch (e) { return mem[st][k]; } },
+    async all(st) {
+      if (!db) return { ...mem[st] };
+      try { const ks = await rq(os(st, 'readonly').getAllKeys()), vs = await rq(os(st, 'readonly').getAll()); const o = {}; ks.forEach((k, i) => o[k] = vs[i]); return o; }
+      catch (e) { return { ...mem[st] }; }
+    },
+    async put(st, k, v) { mem[st][k] = v; if (db) { try { await rq(os(st, 'readwrite').put(v, k)); } catch (e) { console.warn(e); } } },
+    async del(st, k) { delete mem[st][k]; if (db) { try { await rq(os(st, 'readwrite').delete(k)); } catch (e) {} } },
+    async clear(st) { mem[st] = {}; if (db) { try { await rq(os(st, 'readwrite').clear()); } catch (e) {} } }
+  };
+})();
+
+/* ---------------------------------------------------------------- state */
+let S = { cases: [], loop: [], supps: [], leave: [] };
+let IMG = {};
+const ui = { tab: 'dash', month: null, f: { month: '', lead: '', type: '', status: '', q: '' }, loopDay: null,
+             verifier: false, edit: null, draft: newDraft(), loopView: 'day', loopMonth: null, impGrid: null, dd: null, leaveMonth: null, leaveEdit: null, pasteKind: 'chat', exportMonth: 'all', fresh: null };
+
+let saveT;
+function save() { clearTimeout(saveT); saveT = setTimeout(flush, 200); }
+window.addEventListener('pagehide', () => { clearTimeout(saveT); flush(); });
+
+const leadsList = () => [...new Set([...DEFAULT_LEADS, ...S.cases.map(c => c.lead).filter(Boolean)])];
+const monthsList = () => [...new Set(S.cases.map(c => c.month).filter(Boolean))].sort();
+function normalizeCase(c) {
+  if (!Array.isArray(c.colab)) c.colab = c.colab ? [String(c.colab).trim()].filter(Boolean) : [];
+  if (!Array.isArray(c.images)) c.images = [];
+}
+function normalize() {
+  S.loop ||= []; S.leave ||= []; S.supps ||= []; S.cases ||= [];
+  S.cases.forEach(normalizeCase);
+  const seen = new Set(); S.loop = S.loop.filter(r => { r.id ||= loopId(r.date, r.email, r.issue); if (seen.has(r.id)) return false; seen.add(r.id); return true; });
+  if (!S.suppsMerged) { const set = new Set(S.supps); S.cases.forEach(c => c.colab.forEach(n => set.add(n.toUpperCase()))); S.supps = [...set].sort(); S.suppsMerged = true; }
+}
+const loopRows = () => S.loop.filter(r => !isVS(r.email));
+function cameIn(pred) { const s = new Set(); loopRows().forEach(r => { if (pred(r.date)) s.add(r.email.trim().toLowerCase()); }); return s.size; }
+const cameOrNull = pred => loopRows().some(r => pred(r.date)) ? cameIn(pred) : null;
+function loopDistinct(month) { return cameIn(d => d.startsWith(month)); }
+function periodRows(view, month) {
+  const dates = new Set([...loopRows().map(r => r.date), ...S.cases.map(c => c.date).filter(Boolean)]);
+  const hand = pred => { const cs = S.cases.filter(c => c.date && pred(c.date)); return { n: cs.length, v: cs.filter(isVerified).length }; };
+  if (view === 'day') return [...dates].filter(d => !month || d.startsWith(month)).sort().reverse().map(d => { const h = hand(x => x === d); return { key: d, label: fmtDay(d, { weekday: 'short', month: 'short', day: 'numeric' }), came: cameOrNull(x => x === d), handled: h.n, verified: h.v }; });
+  if (view === 'week') return [...new Set([...dates].map(weekStart))].sort().reverse().map(w => { const e = addDays(w, 6), f = x => x >= w && x <= e, h = hand(f); return { key: w, label: `${fmtDay(w)} to ${fmtDay(e)}`, came: cameOrNull(f), handled: h.n, verified: h.v }; });
+  const ms = [...new Set([...[...dates].map(d => d.slice(0, 7)), ...monthsList()])].sort().reverse();
+  return ms.map(m => { const cs = S.cases.filter(c => c.month === m); return { key: m, label: monthLabel(m), came: cameOrNull(d => d.startsWith(m)), handled: cs.length, verified: cs.filter(isVerified).length }; });
+}
+function monthStats(month) {
+  const cs = S.cases.filter(c => c.month === month), loopN = loopDistinct(month);
+  const leads = [...new Set([...DEFAULT_LEADS, ...cs.map(c => c.lead)])].filter(Boolean);
+  const rows = leads.map(lead => {
+    const mine = cs.filter(c => c.lead === lead), v = mine.filter(isVerified);
+    const complex = v.filter(c => c.type === 'Complex').length, simple = v.filter(c => c.type === 'Simple').length;
+    return { lead, posted: mine.length, verified: v.length, complex, simple,
+             waiting: mine.filter(c => statusOf(c) === 'waiting').length,
+             score: complex * POINTS.Complex + simple * POINTS.Simple, share: loopN ? v.length / loopN : null };
+  }).sort((a, b) => b.score - a.score || b.verified - a.verified || a.lead.localeCompare(b.lead));
+  const sum = k => rows.reduce((a, r) => a + r[k], 0);
+  const total = { posted: sum('posted'), verified: sum('verified'), complex: sum('complex'), simple: sum('simple'),
+                  waiting: sum('waiting'), score: sum('score'), share: loopN ? sum('verified') / loopN : null };
+  return { rows, total, loopN, cs };
+}
+
+/* ----------------------------------------------------------------- tabs */
+function renderTabs() {
+  $('#tabs').innerHTML = TABS.map(([k, l]) =>
+    `<button class="tab" role="tab" aria-selected="${ui.tab === k}" data-act="tab" data-tab="${k}">${l}</button>`).join('');
+}
+function go(tab) { ui.tab = tab; render(); window.scrollTo({ top: 0 }); }
+
+function render() {
+  if (Cloud.on && !Cloud.ready) return;
+  $('#stale').hidden = true;
+  renderTabs();
+  const v = { dash: viewDash, cases: viewCases, post: viewPost, loop: viewLoop, leave: viewLeave, export: viewExport }[ui.tab];
+  $('#view').innerHTML = v();
+  if (ui.tab === 'post') { drawThumbs(); drawColab(); }
+  if (ui.tab === 'cases') renderCaseRows();
+  $('#suppList').innerHTML = suppOptions();
+}
+function suppOptions() { return [...(S.supps || [])].sort().map(s => `<option value="${esc(s)}">`).join(''); }
+
+/* ------------------------------------------------------------ dashboard */
+function viewDash() {
+  const months = monthsList();
+  if (!months.length) return `<h2>No cases yet</h2><p class="empty">${Cloud.on ? 'The shared database is empty. Glenn can load the August and September data from Excel: click "Glenn sign in", then open Export. Or post the first case now.' : 'Post your first case to start the scoreboard.'}</p><button class="btn primary" data-act="tab" data-tab="post">Post a case</button>`;
+  if (!ui.month || !months.includes(ui.month)) ui.month = months[months.length - 1];
+  const m = ui.month, st = monthStats(m);
+  const maxScore = Math.max(1, ...st.rows.map(r => r.score));
+  const board = st.rows.map(r => `<tr>
+      <th scope="row">${esc(title(r.lead))}</th>
+      <td class="scorecell"><div class="sc"><div class="bar" aria-hidden="true"><i class="c" style="width:${r.complex * POINTS.Complex / maxScore * 100}%"></i><i class="s" style="width:${r.simple * POINTS.Simple / maxScore * 100}%"></i></div><b>${r.score}</b></div></td>
+      <td class="num">${r.verified}</td><td class="num">${r.complex}</td><td class="num">${r.simple}</td>
+      <td class="num">${r.waiting || '—'}</td><td class="num">${pct(r.share)}</td></tr>`).join('');
+  const t = st.total;
+
+  // per-day chart
+  const [y, mo] = m.split('-').map(Number), dim = new Date(y, mo, 0).getDate();
+  const per = Array.from({ length: dim }, () => ({ c: 0, s: 0, n: 0 }));
+  st.cs.forEach(c => { if (c.date && c.date.startsWith(m)) { const d = +c.date.slice(8) - 1; per[d][c.type === 'Complex' ? 'c' : c.type === 'Simple' ? 's' : 'n']++; } });
+  const maxDay = Math.max(1, ...per.map(p => p.c + p.s + p.n));
+  const dayCols = per.map((p, i) => {
+    const n = p.c + p.s + p.n;
+    return `<div class="day" title="${fmtDay(`${m}-${pad(i + 1)}`)}: ${plural(n, 'case')}"><div class="col" style="height:${n / maxDay * 100}%"><i class="n" style="height:${n ? p.n / n * 100 : 0}%"></i><i class="s" style="height:${n ? p.s / n * 100 : 0}%"></i><i class="c" style="height:${n ? p.c / n * 100 : 0}%"></i></div></div>`;
+  }).join('');
+  const dayLbl = per.map((_, i) => `<span>${i + 1}</span>`).join('');
+
+  // timing
+  const tim = { EARLY: 0, PRIME: 0, LATE: 0, none: 0 };
+  st.cs.forEach(c => { const p = periodOf(c.time); tim[p || 'none']++; });
+  const maxT = Math.max(1, tim.EARLY, tim.PRIME, tim.LATE);
+  const tRow = (lab, sub, n) => `<div><b>${lab}</b><div class="muted" style="font-size:12.5px">${sub}</div></div><div><div class="tb" style="width:${n / maxT * 100}%"></div></div><b>${n}</b>`;
+
+  // attention
+  const att = [];
+  if (t.waiting) att.push(`<li><b>${plural(t.waiting, 'case')}</b> waiting for Glenn to set VF Inbox. <button class="linklike" data-act="goWaiting">Review them</button></li>`);
+  st.cs.filter(c => !c.date).forEach(c => att.push(`<li>Missing date: <button class="linklike" data-act="open" data-id="${c.id}">${esc(c.concern.slice(0, 70))}</button></li>`));
+  st.cs.filter(c => c.date && !c.time).forEach(c => att.push(`<li>Missing email time: <button class="linklike" data-act="open" data-id="${c.id}">${esc(c.concern.slice(0, 70))}</button></li>`));
+  st.cs.filter(c => !c.type).forEach(c => att.push(`<li>Missing Simple or Complex: <button class="linklike" data-act="open" data-id="${c.id}">${esc(c.concern.slice(0, 70))}</button></li>`));
+
+  return `
+  <div class="bar-row">
+    <div class="seg" role="group" aria-label="Month">${months.map(k => `<button data-act="month" data-m="${k}" aria-pressed="${k === m}">${monthLabel(k)}</button>`).join('')}</div>
+    <span class="muted">Complex = 3 points, Simple = 1 point. A case scores only when VF Inbox is Yes.</span>
+  </div>
+  <h2>Scores for ${monthLabel(m)}</h2>
+  <p class="lede"><b>${t.verified}</b> of ${t.posted} posted cases are verified${t.waiting ? `, and <b>${t.waiting}</b> ${t.waiting === 1 ? 'is' : 'are'} waiting for Glenn` : ''}. The team has scored <b>${t.score}</b> points${st.loopN ? ` across ${plural(st.loopN, 'distinct Loop case')}` : ''}.</p>
+  <div class="legend"><span><i style="background:var(--cx)"></i>Complex points</span><span><i style="background:var(--sp)"></i>Simple points</span></div>
+  <div class="tscroll"><table class="board"><caption class="sr">Verified cases and score per team lead</caption>
+    <thead><tr><th>Team lead</th><th>Score</th><th class="num">Verified</th><th class="num">Complex</th><th class="num">Simple</th><th class="num">Waiting</th><th class="num">Share of Loop cases</th></tr></thead>
+    <tbody>${board}</tbody>
+    <tfoot><tr><th scope="row">Total</th><td class="scorecell"><div class="sc"><span style="flex:1"></span><b>${t.score}</b></div></td><td class="num">${t.verified}</td><td class="num">${t.complex}</td><td class="num">${t.simple}</td><td class="num">${t.waiting || '—'}</td><td class="num">${pct(t.share)}</td></tr></tfoot>
+  </table></div>
+  <div class="grid2">
+    <section><h3>Posted cases per day</h3>
+      <div class="days" role="img" aria-label="Bar chart of posted cases per day in ${monthLabel(m)}">${dayCols}</div>
+      <div class="daylabels" aria-hidden="true">${dayLbl}</div></section>
+    <section><h3>When the emails arrived</h3>
+      <div class="timing">${tRow('Early', '5:00 to 8:59 AM', tim.EARLY)}${tRow('Prime', '9:00 AM to 4:59 PM', tim.PRIME)}${tRow('Late', '5:00 PM to 4:59 AM', tim.LATE)}</div></section>
+  </div>
+  <section style="margin-top:30px"><h3>Needs attention</h3>
+    ${att.length ? `<ul class="att">${att.join('')}</ul>` : `<p class="muted" style="margin:0">Nothing needs attention for ${monthLabel(m)}.</p>`}</section>`;
+}
+
+/* ---------------------------------------------------------------- cases */
+function filtered() {
+  const f = ui.f, q = f.q.trim().toLowerCase();
+  return S.cases.filter(c =>
+    (!f.month || c.month === f.month) && (!f.lead || c.lead === f.lead) && (!f.type || c.type === f.type) &&
+    (!f.status || statusOf(c) === f.status) &&
+    (!q || [c.concern, c.caseNo, c.serviceId, c.result, c.colab, c.took, c.remarks, c.instruction, c.lead].join(' ').toLowerCase().includes(q))
+  ).sort((a, b) => (b.date || '9999').localeCompare(a.date || '9999') || (b.time || '').localeCompare(a.time || ''));
+}
+const camera = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+const typeChip = t => `<span class="chip ${t === 'Complex' ? 'cx' : t === 'Simple' ? 'sp' : 'none'}">${t || 'No type'}</span>`;
+function vfCell(c) {
+  if (!ui.verifier) return `<span class="st ${statusOf(c)}">${statusText[statusOf(c)]}</span>`;
+  return `<select class="compact" data-vf="${c.id}" aria-label="VF Inbox for this case"><option value=""${!c.vf ? ' selected' : ''}>Waiting</option><option value="Yes"${c.vf === 'Yes' ? ' selected' : ''}>Yes</option><option value="No"${c.vf === 'No' ? ' selected' : ''}>No</option></select>`;
+}
+function caseRow(c) {
+  const ids = [c.serviceId && `Service ID ${esc(c.serviceId)}`, c.caseNo && `Case ${esc(c.caseNo)}`].filter(Boolean).join(' &nbsp;|&nbsp; ');
+  const n = (c.images || []).length, p = periodOf(c.time);
+  return `<tr data-row="${c.id}"${ui.fresh === c.id ? ' class="fresh"' : ''}>
+    <td class="nowrap"><b>${fmtDay(c.date)}</b><div class="muted" style="font-size:12.5px">${fmtTime(c.time) || 'No time'}${p ? ' ' + title(p) : ''}</div></td>
+    <td>${esc(title(c.lead))}</td>
+    <td class="concern"><button class="linklike" data-act="open" data-id="${c.id}">${esc(c.concern || '(no subject)')}</button>${ids ? `<div class="ids muted">${ids}</div>` : ''}</td>
+    <td>${typeChip(c.type)}</td>
+    <td>${vfCell(c)}</td>
+    <td class="num">${isVerified(c) ? '+' + pointsOf(c) : '—'}</td>
+    <td>${n ? `<div class="rowimgs">${(c.images || []).slice(0, 2).map(i => IMG[i.id] ? `<button data-act="viewImgs" data-id="${c.id}" data-img="${i.id}" aria-label="View image ${esc(i.name)}"><img src="${IMG[i.id]}" alt=""></button>` : '').join('')}${n > 2 ? `<button class="linklike more" data-act="viewImgs" data-id="${c.id}" style="width:auto;height:auto;border:0;background:none">+${n - 2}</button>` : ''}</div>` : '<span class="muted">—</span>'}</td>
+    <td><div class="rowact"><button class="btn small" data-act="open" data-id="${c.id}">View</button><button class="btn small" data-act="editImages" data-id="${c.id}"${locked(c) ? ` disabled title="${LOCK_MSG}"` : ''}>Edit</button><button class="btn small danger" data-act="del" data-id="${c.id}"${locked(c) ? ` disabled title="${LOCK_MSG}"` : ''}>Delete</button></div></td></tr>`;
+}
+function renderCaseRows() {
+  const list = filtered(), body = $('#caseBody'); if (!body) return;
+  body.innerHTML = list.length ? list.map(caseRow).join('') : `<tr><td colspan="8" class="empty">No cases match these filters.</td></tr>`;
+  const w = list.filter(c => statusOf(c) === 'waiting').length;
+  $('#caseCount').textContent = `${plural(list.length, 'case')} shown`;
+  const vb = $('#verifyAll'); if (vb) { vb.hidden = !(ui.verifier && w); vb.textContent = `Mark ${w} waiting as Yes`; }
+}
+function viewCases() {
+  const months = monthsList(), f = ui.f;
+  const opt = (arr, cur, all) => `<option value="">${all}</option>` + arr.map(([v, l]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('');
+  return `
+  <div class="tools"><h2 style="margin:0">Cases</h2><button class="btn primary" data-act="newCase">Post a case</button></div>
+  ${ui.verifier ? `<div class="banner"><b>Verify mode is on.</b> Set VF Inbox for each case. Only cases set to Yes count toward scores.</div>` : ''}
+  <div class="filters">
+    <select id="fMonth" aria-label="Month">${opt(months.map(k => [k, monthLabel(k)]), f.month, 'All months')}</select>
+    <select id="fLead" aria-label="Team lead">${opt(leadsList().map(l => [l, title(l)]), f.lead, 'All team leads')}</select>
+    <select id="fType" aria-label="Type of issue">${opt([['Complex', 'Complex'], ['Simple', 'Simple']], f.type, 'Simple and Complex')}</select>
+    <select id="fStatus" aria-label="VF Inbox status">${opt([['verified', 'Verified'], ['waiting', 'Waiting for Glenn'], ['notcounted', 'Not counted']], f.status, 'Any status')}</select>
+    <input type="text" id="fQ" class="q" placeholder="Search concern, case, service ID" aria-label="Search cases" value="${esc(f.q)}">
+  </div>
+  <div class="tools"><span class="muted" id="caseCount"></span><button class="btn small" id="verifyAll" data-act="verifyAll" hidden></button></div>
+  <div class="tscroll"><table><thead><tr><th>Date</th><th>Team lead</th><th>Concern</th><th>Type</th><th>VF Inbox</th><th class="num">Points</th><th>Images</th><th>Actions</th></tr></thead>
+  <tbody id="caseBody"></tbody></table></div>`;
+}
+
+function openDetail(id, edit) {
+  const c = S.cases.find(x => x.id === id); if (!c) return;
+  if (edit) {
+    if (!ui.dd || ui.dd.id !== id) ui.dd = { id, date: c.date, time: c.time, concern: c.concern || '', images: (c.images || []).map(i => ({ ...i, data: IMG[i.id] || '' })) };
+    const dd = ui.dd;
+    const grp = (kind, name) => {
+      const im = dd.images.filter(i => i.kind === kind);
+      return `<h3 style="margin-top:18px">${name}</h3>` + (im.length ? `<div class="thumbs">${im.map(i => `<figure>${i.data ? `<img src="${i.data}" alt="${esc(i.name)}" data-act="ddZoom" data-id="${i.id}">` : '<div class="missing">Image data not found. Replace it.</div>'}<figcaption><span title="${esc(i.name)}">${esc(i.name)}</span></figcaption><div class="figbtns"><button class="linklike" data-act="ddReplace" data-id="${i.id}">Replace</button><button class="linklike" data-act="ddRemove" data-id="${i.id}">Remove</button></div></figure>`).join('')}</div>` : '<p class="muted" style="margin:4px 0 0">No images attached.</p>')
+        + `<button class="btn small" data-act="ddAdd" data-kind="${kind}" style="margin-top:10px">Add image</button>`;
+    };
+    $('#detailBody').innerHTML = `
+      <h2>Edit case</h2>
+      <label class="f" style="margin:10px 0 14px"><span class="l">Concern</span><textarea id="ddConcern" rows="2">${esc(dd.concern)}</textarea></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:420px">
+        <label class="f"><span class="l">Date</span><input type="date" id="ddDate" value="${esc(dd.date)}"></label>
+        <label class="f"><span class="l">Email time</span><input type="time" id="ddTime" value="${esc(dd.time)}"></label></div>
+      ${grp('chat', 'Conversation with the agent')}${grp('instruction', 'Instructions given')}
+      <div class="actions"><button class="btn primary" data-act="ddSave">Save changes</button><button class="btn" data-act="ddCancel">Cancel</button><button class="btn" data-act="edit" data-id="${c.id}" style="margin-left:auto">More fields (team lead, type, result)</button></div>`;
+  } else {
+    ui.dd = null; ui.curDetail = id;
+    const gal = kind => {
+      const imgs = (c.images || []).filter(i => i.kind === kind);
+      return imgs.length ? `<div class="thumbs">${imgs.map(i => `<figure>${IMG[i.id] ? `<img src="${IMG[i.id]}" alt="${esc(i.name)}" data-act="zoom" data-id="${i.id}">` : `<div class="missing">${missingMsg(i.id)}</div>`}<figcaption><span title="${esc(i.name)}">${esc(i.name)}</span></figcaption></figure>`).join('')}</div>` : `<p class="muted" style="margin:4px 0 0">No images attached.</p>`;
+    };
+    const row = (k, v) => v ? `<dt>${k}</dt><dd>${esc(v)}</dd>` : '';
+    $('#detailBody').innerHTML = `
+      <h2>${esc(c.concern || '(no subject)')}</h2>
+      <p style="margin:6px 0 0">${typeChip(c.type)} &nbsp; ${vfCell(c)} &nbsp; <b>${isVerified(c) ? '+' + pointsOf(c) + ' points' : 'No points yet'}</b></p>
+      <dl class="meta">
+        ${row('Date', c.date ? fmtDay(c.date, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'No date')}
+        ${row('Email time', c.time ? `${fmtTime(c.time)} (${title(periodOf(c.time))})` : '')}
+        ${row('Counts toward', c.month ? monthLabel(c.month) : '')}
+        ${row('Team lead', title(c.lead))}${row('Colab / Tucson supp', (c.colab || []).map(title).join('; '))}${row('Tucson supp took over', c.took)}
+        ${row('Service ID', c.serviceId)}${row('Case number', c.caseNo)}
+        ${row('Result', c.result)}${row('Instruction to agent', c.instruction)}${row('Remarks', c.remarks)}
+        ${row('Last updated', c.updatedBy ? `${c.updatedBy}, ${new Date(c.updatedAt).toLocaleString()}` : '')}
+      </dl>
+      <h3>Conversation with the agent</h3>${gal('chat')}
+      <h3 style="margin-top:16px">Instructions given</h3>${gal('instruction')}
+      <div class="actions"><button class="btn primary" data-act="editImages" data-id="${c.id}"${locked(c) ? ' disabled' : ''}>Edit</button><button class="btn" data-act="edit" data-id="${c.id}"${locked(c) ? ' disabled' : ''}>Edit all details</button><button class="btn danger" data-act="del" data-id="${c.id}"${locked(c) ? ' disabled' : ''}>Delete</button>${locked(c) ? `<span class="muted" style="align-self:center;font-size:13px">${LOCK_MSG}</span>` : ''}<button class="btn" data-act="closeDetail" style="margin-left:auto">Close</button></div>`;
+  }
+  const d = $('#detail'); if (!d.open) d.showModal();
+}
+function syncDd() { if (!ui.dd) return; const d = $('#ddDate'), t = $('#ddTime'), k = $('#ddConcern'); if (d) ui.dd.date = d.value; if (t) ui.dd.time = t.value; if (k) ui.dd.concern = k.value; }
+function pickImages(multiple, cb) {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = !!multiple;
+  inp.onchange = async () => { const out = []; for (const f of inp.files) { try { out.push({ name: f.name, data: await fileToData(f) }); } catch (e) { toast(`Couldn't read ${f.name}.`); } } cb(out); };
+  inp.click();
+}
+async function ddSave() {
+  syncDd(); const dd = ui.dd, c = S.cases.find(x => x.id === dd.id);
+  if (locked(c)) { toast(LOCK_MSG); return; }
+  if (!dd.concern.trim()) { toast('The concern cannot be empty.'); return; }
+  const oldM = (c.date || '').slice(0, 7);
+  c.date = dd.date; c.time = dd.time; c.concern = dd.concern.trim();
+  if (dd.date && (c.month === oldM || !c.month)) c.month = dd.date.slice(0, 7);
+  const keep = new Set(dd.images.map(i => i.id));
+  for (const i of (c.images || [])) if (!keep.has(i.id)) await imgDel(i.id);
+  for (const i of dd.images) if (i.isNew) { await imgPut(i.id, i.data, c.id); i.isNew = false; }
+  c.images = dd.images.map(({ id, kind, name }) => ({ id, kind, name }));
+  stamp(c); save(); ui.dd = null; toast('Changes saved'); openDetail(c.id); render();
+}
+
+/* ------------------------------------------------------------ post form */
+function viewPost() {
+  const c = ui.edit ? S.cases.find(x => x.id === ui.edit) : null;
+  const v = k => esc(c ? c[k] : '');
+  const date = c ? c.date : todayISO();
+  const leads = leadsList(), months = [...new Set([...monthsList(), (c ? c.month : date.slice(0, 7))])].sort();
+  const cm = c ? c.month : date.slice(0, 7);
+  return `
+  <h2>${c ? 'Edit case' : 'Post a case'}</h2>
+  <p class="hint" style="margin-bottom:16px">New cases start as waiting. Glenn sets VF Inbox to Yes in Verify mode, and only then do the points count.</p>
+  <div class="formgrid" id="caseForm">
+    <label class="f"><span class="l">Date</span><input type="date" id="fDate" value="${esc(date)}"></label>
+    <label class="f"><span class="l">Email time</span><input type="time" id="fTime" value="${v('time')}"><small class="muted" id="periodNote" style="font-weight:400"></small></label>
+    <label class="f"><span class="l">Counts toward month</span><select id="fCM">${months.map(k => `<option value="${k}"${k === cm ? ' selected' : ''}>${monthLabel(k)}</option>`).join('')}</select></label>
+    <label class="f"><span class="l">Team lead</span><select id="fLeadSel">${leads.map(l => `<option value="${esc(l)}"${c && c.lead === l ? ' selected' : ''}>${esc(title(l))}</option>`).join('')}<option value="__new">Someone else…</option></select><input type="text" id="fLeadNew" placeholder="Full name" style="margin-top:6px" hidden></label>
+    <div class="f w3"><span class="l" id="colabL">Colab / Tucson supp</span><div class="chips" id="colabChips"></div>
+      <div class="addrow"><input type="text" id="fColabIn" list="suppList" placeholder="Type a name, press Enter" aria-labelledby="colabL"><button class="btn small" type="button" data-act="colabAdd">Add</button></div>
+      <button class="linklike" type="button" data-act="suppManage" style="font-size:13px;margin-top:4px">Edit the supp list</button></div>
+    <label class="f w3"><span class="l">Tucson supp took over</span><input type="text" id="fTook" list="suppList" value="${v('took')}"></label>
+    <label class="f w3"><span class="l">Service ID</span><input type="text" id="fSid" value="${v('serviceId')}" inputmode="numeric"></label>
+    <label class="f w3"><span class="l">Case number</span><input type="text" id="fCase" value="${v('caseNo')}"></label>
+    <label class="f w6"><span class="l">Concern (email subject)</span><textarea id="fConcern" rows="2">${v('concern')}</textarea></label>
+    <fieldset class="w6" style="border:0;padding:0;margin:0"><legend class="l" style="font-weight:600;font-size:13.5px;padding:0;margin-bottom:4px">Type of issue</legend>
+      <div class="types">
+        <label><input type="radio" name="fType" value="Simple"${c && c.type === 'Simple' ? ' checked' : ''}><b>Simple</b><small>1 point once verified</small></label>
+        <label><input type="radio" name="fType" value="Complex"${c && c.type === 'Complex' ? ' checked' : ''}><b>Complex</b><small>3 points once verified</small></label>
+      </div></fieldset>
+    <label class="f w6"><span class="l">Result</span><textarea id="fResult" rows="2" placeholder="Type the result freely">${c ? v('result') : 'Replied to Email'}</textarea></label>
+    <label class="f w6"><span class="l">How you instructed the agent</span><textarea id="fInstr" rows="2" placeholder="For example: asked the agent to pull logs and call the site back">${v('instruction')}</textarea></label>
+    <label class="f w6"><span class="l">Remarks</span><input type="text" id="fRem" value="${v('remarks')}"></label>
+  </div>
+  <div class="zones" style="margin-top:24px;max-width:920px">
+    ${zone('chat', 'Conversation with the agent', 'Screenshots that show you spoke to the agent.')}
+    ${zone('instruction', 'Instructions given', 'Screenshots of the steps or instructions you sent.')}
+  </div>
+  <p class="err" id="formErr" role="alert" hidden></p>
+  <div class="actions"><button class="btn primary" data-act="saveCase">${c ? 'Save changes' : 'Post case'}</button><button class="btn" data-act="cancelPost">Cancel</button></div>`;
+}
+function zone(kind, name, hint) {
+  return `<section data-zone="${kind}"><h3>${name}</h3><p class="hint">${hint}</p>
+    <div class="drop" tabindex="0" role="button" data-act="pick" data-kind="${kind}">Drop images here, click to browse, or paste a screenshot</div>
+    <input type="file" accept="image/*" multiple hidden id="file-${kind}"><div class="thumbs" id="thumbs-${kind}"></div></section>`;
+}
+function drawThumbs() {
+  ['chat', 'instruction'].forEach(k => {
+    const el = $('#thumbs-' + k); if (!el) return;
+    el.innerHTML = ui.draft.images.filter(i => i.kind === k).map(i => `<figure><img src="${i.data}" alt="${esc(i.name)}" data-act="zoomDraft" data-id="${i.id}"><figcaption><span title="${esc(i.name)}">${esc(i.name)}</span><button class="linklike" data-act="rmImg" data-id="${i.id}" aria-label="Remove ${esc(i.name)}">Remove</button></figcaption></figure>`).join('');
+  });
+}
+function fileToData(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      let max = 1400, q = 0.8, out = '';
+      for (let n = 0; n < 8; n++) {   // keep each image under about 850 KB so it fits one database record
+        const k = Math.min(1, max / Math.max(img.width, img.height)), w = Math.round(img.width * k), h = Math.round(img.height * k);
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h); cx.drawImage(img, 0, 0, w, h);
+        out = cv.toDataURL('image/jpeg', q); if (out.length < 850000) break;
+        max = Math.round(max * 0.8); q = Math.max(0.55, q - 0.05);
+      }
+      URL.revokeObjectURL(url); res(out);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Not an image')); };
+    img.src = url;
+  });
+}
+async function addFiles(files, kind) {
+  const list = [...files].filter(f => f.type.startsWith('image/'));
+  if (!list.length) { toast('Only image files can be attached.'); return; }
+  for (const f of list) {
+    try { ui.draft.images.push({ id: uid(), kind, name: f.name && f.name !== 'image.png' ? f.name : `Screenshot ${ui.draft.images.length + 1}.jpg`, data: await fileToData(f), isNew: true }); }
+    catch (e) { toast(`Couldn't read ${f.name}.`); }
+  }
+  drawThumbs();
+}
+function drawColab() {
+  const el = $('#colabChips'); if (!el) return;
+  el.innerHTML = ui.draft.colab.map((n, i) => `<span class="tag">${esc(title(n))}<button type="button" data-act="colabRm" data-i="${i}" aria-label="Remove ${esc(title(n))}">×</button></span>`).join('');
+}
+function addColab(quiet) {
+  const inp = $('#fColabIn'); if (!inp) return; const n = inp.value.trim().toUpperCase(); if (!n) return;
+  if (!ui.draft.colab.includes(n)) ui.draft.colab.push(n);
+  inp.value = ''; drawColab(); if (!quiet) inp.focus();
+}
+function drawSupp() {
+  $('#suppItems').innerHTML = [...S.supps].sort().map(n => `<li><span>${esc(title(n))}</span><button class="linklike" data-act="suppRm" data-n="${esc(n)}" aria-label="Remove ${esc(title(n))}">Remove</button></li>`).join('') || '<li class="muted">The list is empty.</li>';
+}
+function updatePeriodNote() {
+  const t = $('#fTime'); if (!t) return; const p = periodOf(t.value);
+  $('#periodNote').textContent = p ? `${title(p)} period` : '';
+}
+async function saveCase() {
+  const val = id => $('#' + id).value.trim();
+  const lead = ($('#fLeadSel').value === '__new' ? val('fLeadNew') : $('#fLeadSel').value).toUpperCase();
+  const type = ($('input[name=fType]:checked') || {}).value || '';
+  addColab(true);
+  const errs = [];
+  if (!val('fDate')) errs.push('Choose the date');
+  if (!val('fConcern')) errs.push('Enter the concern');
+  if (!lead) errs.push('Choose the team lead');
+  if (!type) errs.push('Choose Simple or Complex');
+  const eb = $('#formErr');
+  if (errs.length) { eb.textContent = errs.join('. ') + '.'; eb.hidden = false; return; }
+  eb.hidden = true;
+  const old = ui.edit ? S.cases.find(x => x.id === ui.edit) : null;
+  if (old && locked(old)) { toast(LOCK_MSG); return; }
+  const c = old || { id: uid(), vf: '', images: [] };
+  Object.assign(c, { month: $('#fCM').value, date: val('fDate'), time: val('fTime'), lead, colab: [...ui.draft.colab], took: val('fTook'),
+    serviceId: val('fSid'), caseNo: val('fCase'), concern: val('fConcern'), type, result: val('fResult'),
+    instruction: val('fInstr'), remarks: val('fRem') });
+  const keep = new Set(ui.draft.images.map(i => i.id));
+  for (const i of (c.images || [])) if (!keep.has(i.id)) await imgDel(i.id);
+  for (const i of ui.draft.images) if (i.isNew) await imgPut(i.id, i.data, c.id);
+  c.images = ui.draft.images.map(({ id, kind, name }) => ({ id, kind, name }));
+  ui.draft.colab.forEach(n => { if (!S.supps.includes(n)) S.supps.push(n); }); S.supps.sort();
+  if (!old) S.cases.push(c);
+  stamp(c); save();
+  ui.edit = null; ui.draft = newDraft(); ui.fresh = c.id; ui.f = { month: c.month, lead: '', type: '', status: '', q: '' };
+  toast(old ? 'Case updated' : 'Case posted'); go('cases');
+}
+function startPost(id) {
+  ui.edit = id || null;
+  ui.draft = newDraft();
+  if (id) {
+    const c = S.cases.find(x => x.id === id);
+    ui.draft.images = (c.images || []).map(i => ({ ...i, data: IMG[i.id] || '' }));
+    ui.draft.colab = [...(c.colab || [])];
+  }
+  go('post');
+  if (id) updatePeriodNote();
+}
+
+/* ---------------------------------------------------------------- loop */
+function viewLoop() {
+  const rowsAll = loopRows(), days = [...new Set(rowsAll.map(r => r.date))].sort();
+  const lmonths = [...new Set(days.map(d => d.slice(0, 7)))];
+  if (!ui.loopDay) ui.loopDay = days[days.length - 1] || todayISO();
+  if (ui.loopMonth === null) ui.loopMonth = lmonths[lmonths.length - 1] || '';
+  const view = ui.loopView, pr = periodRows(view, ui.loopMonth), mx = Math.max(1, ...pr.flatMap(r => [r.came || 0, r.handled]));
+  const first = { day: 'Day', week: 'Week (Monday to Sunday)', month: 'Month' }[view];
+  const body = pr.length ? pr.map(r => `<tr${view === 'day' && r.key === ui.loopDay ? ' class="sel"' : ''}>
+      <td><button class="linklike" data-act="loopDrill" data-k="${r.key}">${esc(r.label)}</button></td>
+      <td class="num">${r.came ?? '—'}</td><td class="num">${r.handled}</td><td class="num">${r.verified}</td>
+      <td><div class="dual" aria-hidden="true"><i class="a" style="width:${(r.came || 0) / mx * 100}%"></i><i class="b" style="width:${r.handled / mx * 100}%"></i></div></td>
+      <td class="num">${r.came ? Math.round(r.handled / r.came * 100) + '%' : '—'}</td></tr>`).join('')
+    : `<tr><td colspan="6" class="empty">Nothing to show yet.</td></tr>`;
+  const dayRows = rowsAll.filter(r => r.date === ui.loopDay), vsN = S.loop.filter(r => r.date === ui.loopDay && isVS(r.email)).length;
+  const prev = [...days].reverse().find(d => d < ui.loopDay), next = days.find(d => d > ui.loopDay);
+  const h = S.cases.filter(c => c.date === ui.loopDay);
+  const link = e => /^https?:\/\//.test(e) ? `<a href="${esc(e)}" target="_blank" rel="noopener">${esc(e.split('/').pop())}</a>` : esc(e);
+  return `
+  <div class="tools"><h2 style="margin:0">Loop daily list</h2></div>
+  <p class="hint">Cases from the Escalation page in Loop, and how many of them we handled. VS tickets are not counted.</p>
+  <details class="card plain" open style="margin-top:8px"><summary>Paste a day from Loop</summary>
+    <p class="hint" style="margin-top:8px">Open the day's page in Loop, select the table, copy it, and paste it below. Every row counts except VS tickets, which are skipped.</p>
+    <div style="margin-bottom:10px"><label class="f"><span class="l">Day</span><input type="date" id="impDate" value="${ui.loopDay}" style="width:auto"></label></div>
+    <textarea id="impText" rows="5" placeholder="Paste the table here" aria-label="Pasted Loop table"></textarea>
+    <p class="hint" id="impPreview" style="margin:8px 0 0"></p>
+    <div class="actions" style="margin-top:10px"><button class="btn primary" data-act="impAdd">Add to this day</button></div></details>
+
+  <h3 style="margin-top:28px">Cases that came in and cases we handled</h3>
+  <div class="bar-row" style="margin-bottom:10px">
+    <div class="seg" role="group" aria-label="Summary period">${[['day', 'Per day'], ['week', 'Per week'], ['month', 'Per month']].map(([k, l]) => `<button data-act="loopView" data-v="${k}" aria-pressed="${view === k}">${l}</button>`).join('')}</div>
+    ${view === 'day' ? `<select id="lpMonth" class="compact" aria-label="Month"><option value="">All months</option>${lmonths.concat(monthsList()).filter((m, i, a) => a.indexOf(m) === i).sort().map(m => `<option value="${m}"${m === ui.loopMonth ? ' selected' : ''}>${monthLabel(m)}</option>`).join('')}</select>` : ''}
+  </div>
+  <div class="legend"><span><i class="a"></i>Came in (distinct Loop cases)</span><span><i style="background:var(--cx)"></i>Handled (cases posted here)</span></div>
+  <div class="tscroll"><table><thead><tr><th>${first}</th><th class="num">Came in</th><th class="num">Handled</th><th class="num">Verified</th><th></th><th class="num">Handled vs came in</th></tr></thead><tbody>${body}</tbody></table></div>
+  <p class="hint" style="margin-top:8px">A dash under Came in means no Loop day has been pasted for that period yet. Per-day and per-week handled counts use the case date. Per-month handled uses "Counts toward month", the same as the dashboard.</p>
+
+  <div id="dayPanel" style="margin-top:30px">
+    <div class="tools"><h3 style="margin:0">${fmtDay(ui.loopDay, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</h3>
+      <span><button class="btn small" data-act="loopGo" data-d="${prev || ''}"${prev ? '' : ' disabled'}>Earlier day</button> <button class="btn small" data-act="loopGo" data-d="${next || ''}"${next ? '' : ' disabled'}>Later day</button> ${dayRows.length || vsN ? `<button class="btn small danger" data-act="clearDay">Remove this day</button>` : ''}</span></div>
+    <p class="muted" style="margin:0 0 8px"><b>${dayRows.length}</b> came in, <b>${h.length}</b> handled${vsN ? `. ${plural(vsN, 'VS ticket')} not counted` : ''}.</p>
+    <div class="tscroll"><table><thead><tr><th class="num" style="width:44px">#</th><th>Email/JSD</th><th>Issue</th><th>Assign</th></tr></thead><tbody>
+      ${dayRows.length ? dayRows.map((r, i) => `<tr><td class="num muted">${i + 1}</td><td class="concern">${link(r.email)}</td><td>${esc(r.issue) || '<span class="muted">—</span>'}</td><td>${esc(r.assigned) || '<span class="muted">—</span>'}</td></tr>`).join('') : `<tr><td colspan="4" class="empty">No Loop cases saved for this day. Paste the day's table above.</td></tr>`}
+    </tbody></table></div></div>`;
+}
+/* Reads a pasted table. Loop copies as an HTML table, so that is preferred; plain tab-separated text also works. */
+function tableHtmlToGrid(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html'), tb = doc.querySelector('table'); if (!tb) return null;
+  return [...tb.querySelectorAll('tr')].map(tr => [...tr.children].filter(c => /^(TD|TH)$/.test(c.tagName)).map(c => {
+    c.querySelectorAll('br,p,div,li').forEach(n => n.insertAdjacentText('afterend', '\n'));
+    return c.textContent.replace(/\u00a0/g, ' ').trim();
+  }));
+}
+function parseTSV(text) {
+  const rows = []; let row = [], cell = '', q = false; text = text.replace(/\r/g, '');
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+    else if (ch === '"' && cell === '') q = true;
+    else if (ch === '\t') { row.push(cell); cell = ''; }
+    else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += ch;
+  }
+  row.push(cell); rows.push(row); return rows.filter(r => r.some(c => c.trim()));
+}
+function gridToLoop(grid) {
+  let rows = grid.filter(r => r.some(c => String(c).trim())), ci = 0, ii = 1, ai = 2;
+  const h = rows.findIndex(r => r.some(c => /email\s*\/?\s*jsd/i.test(c)));
+  if (h >= 0) {
+    const hd = rows[h].map(c => c.trim().toLowerCase());
+    ci = hd.findIndex(c => c.startsWith('email')); ii = hd.findIndex(c => c.startsWith('issue')); ai = hd.findIndex(c => c.startsWith('assign'));
+    rows = rows.slice(h + 1);
+    const off = rows.length && /^\d+$/.test((rows[0][0] || '').trim()) ? Math.max(0, rows[0].length - hd.length) : 0;
+    if (off) { ci += off; if (ii >= 0) ii += off; if (ai >= 0) ai += off; }
+  } else if (rows.length && rows.every(r => r.length >= 4 && /^\d+$/.test(r[0].trim()))) { ci = 1; ii = 2; ai = 3; }
+  const clean = s => String(s || '').replace(/\s*\n\s*/g, ' / ').replace(/\s+/g, ' ').trim();
+  return rows.map(r => { const issue = ii >= 0 ? clean(r[ii]) : ''; return { email: clean(r[ci]) || issue, issue: clean(r[ci]) ? issue : '', assigned: ai >= 0 ? clean(r[ai]).replace(/^@\s*/, '') : '' }; }).filter(r => r.email);
+}
+const importGrid = () => ui.impGrid || parseTSV($('#impText').value);
+function previewImp() {
+  const rows = gridToLoop(importGrid()), vs = rows.filter(r => isVS(r.email)).length, keep = rows.length - vs, txt = $('#impText').value.trim();
+  $('#impPreview').textContent = rows.length ? `Found ${plural(keep, 'case')} to count${vs ? ` and ${plural(vs, 'VS ticket')} that will be skipped` : ''}.` : (txt ? 'No rows found. Copy the whole table, including the heading row.' : '');
+}
+
+/* --------------------------------------------------------- leave and absence */
+function viewLeave() {
+  const today = todayISO(), m = ui.leaveMonth || today.slice(0, 7), [y, mo] = m.split('-').map(Number), dim = new Date(y, mo, 0).getDate();
+  const leads = leadsList(), grid = {}, tot = {};
+  [...S.leave].sort((a, b) => a.from.localeCompare(b.from)).forEach(L => eachDay(L.from, L.to).forEach(d => { if (d.startsWith(m)) (grid[L.lead] ||= {})[+d.slice(8)] = L.type; }));
+  Object.entries(grid).forEach(([lead, days]) => { tot[lead] = { VL: 0, SL: 0, EL: 0, ABS: 0, RD: 0 }; Object.values(days).forEach(k => tot[lead][k]++); });
+  const months = [...new Set([...monthsList(), ...S.leave.map(l => l.from.slice(0, 7)), today.slice(0, 7), m])].sort();
+  const out = S.leave.filter(L => L.from <= today && (L.to || L.from) >= today);
+  const e = ui.leaveEdit ? S.leave.find(x => x.id === ui.leaveEdit) : null;
+  const dow = d => new Date(y, mo - 1, d).getDay();
+  const head = Array.from({ length: dim }, (_, i) => `<th class="${[0, 6].includes(dow(i + 1)) ? 'we' : ''}" scope="col">${i + 1}<br><span class="muted">${'SMTWTFS'[dow(i + 1)]}</span></th>`).join('');
+  const rows = leads.map(l => `<tr><td>${esc(title(l))}</td>${Array.from({ length: dim }, (_, i) => { const k = (grid[l] || {})[i + 1]; return k ? `<td class="k k-${k}" title="${LEAVE[k]}">${k}</td>` : `<td class="${[0, 6].includes(dow(i + 1)) ? 'we' : ''}"></td>`; }).join('')}</tr>`).join('');
+  const list = S.leave.filter(L => L.from.slice(0, 7) === m || (L.to || L.from).slice(0, 7) === m || (L.from < m + '-01' && (L.to || L.from) > m + '-28')).sort((a, b) => b.from.localeCompare(a.from));
+  return `
+  <div class="tools"><h2 style="margin:0">Leave and absence</h2></div>
+  <p class="hint">${out.length ? `Out today: <b>${out.map(L => `${esc(title(L.lead))} (${LEAVE[L.type]})`).join(', ')}</b>.` : 'Nobody is marked out today.'}</p>
+  <div class="card plain" style="background:var(--soft)"><h3>${e ? 'Edit entry' : 'Add leave or absence'}</h3>
+    <div class="formgrid" style="max-width:none">
+      <label class="f"><span class="l">Team lead</span><select id="lvLead">${leads.map(l => `<option value="${esc(l)}"${e && e.lead === l ? ' selected' : ''}>${esc(title(l))}</option>`).join('')}</select></label>
+      <label class="f"><span class="l">Type</span><select id="lvType">${Object.entries(LEAVE).map(([k, v]) => `<option value="${k}"${e && e.type === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+      <label class="f"><span class="l">From</span><input type="date" id="lvFrom" value="${esc(e ? e.from : today)}"></label>
+      <label class="f"><span class="l">To (same day if empty)</span><input type="date" id="lvTo" value="${esc(e && e.to !== e.from ? e.to : '')}"></label>
+      <label class="f w3"><span class="l">Note (optional)</span><input type="text" id="lvNote" value="${esc(e ? e.note : '')}"></label></div>
+    <p class="err" id="lvErr" role="alert" hidden></p>
+    <div class="actions" style="margin-top:12px"><button class="btn primary" data-act="leaveSave">${e ? 'Save changes' : 'Add'}</button>${e ? '<button class="btn" data-act="leaveCancel">Cancel</button>' : ''}</div></div>
+
+  <div class="bar-row" style="margin-top:28px;margin-bottom:10px"><h3 style="margin:0">${monthLabel(m)}</h3>
+    <select id="lvMonth" class="compact" aria-label="Month">${months.map(k => `<option value="${k}"${k === m ? ' selected' : ''}>${monthLabel(k)}</option>`).join('')}</select></div>
+  <div class="legend">${Object.entries(LEAVE).map(([k, v]) => `<span><span class="lgd k-${k}">${k}</span>${v}</span>`).join('')}</div>
+  <div class="tscroll"><table class="lv"><thead><tr><th scope="col">Team lead</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+
+  <h3 style="margin-top:26px">Days off in ${monthLabel(m)}</h3>
+  <div class="tscroll"><table><thead><tr><th>Team lead</th>${Object.entries(LEAVE).map(([k, v]) => `<th class="num">${v}</th>`).join('')}<th class="num">Total days</th></tr></thead><tbody>
+    ${leads.map(l => { const t2 = tot[l] || { VL: 0, SL: 0, EL: 0, ABS: 0, RD: 0 }, sum = Object.values(t2).reduce((a, b) => a + b, 0); return `<tr><td>${esc(title(l))}</td>${Object.keys(LEAVE).map(k => `<td class="num">${t2[k] || '—'}</td>`).join('')}<td class="num"><b>${sum || '—'}</b></td></tr>`; }).join('')}</tbody></table></div>
+
+  <h3 style="margin-top:26px">Entries</h3>
+  <div class="tscroll"><table><thead><tr><th>Team lead</th><th>Type</th><th>Dates</th><th class="num">Days</th><th>Note</th><th></th></tr></thead><tbody>
+    ${list.length ? list.map(L => `<tr><td>${esc(title(L.lead))}</td><td><span class="lgd k-${L.type}">${L.type}</span>${LEAVE[L.type]}</td><td class="nowrap">${fmtDay(L.from, { month: 'short', day: 'numeric', year: 'numeric' })}${L.to && L.to !== L.from ? ' to ' + fmtDay(L.to, { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</td><td class="num">${eachDay(L.from, L.to).length}</td><td>${esc(L.note) || '<span class="muted">—</span>'}</td><td class="nowrap"><button class="linklike" data-act="leaveEdit" data-id="${L.id}">Edit</button> &nbsp; <button class="linklike" data-act="leaveDel" data-id="${L.id}" style="color:var(--bad)">Delete</button></td></tr>`).join('') : `<tr><td colspan="6" class="empty">No leave or absence entered for ${monthLabel(m)}.</td></tr>`}
+  </tbody></table></div>`;
+}
+
+/* --------------------------------------------------------------- export */
+function viewExport() {
+  const months = monthsList();
+  const scope = ui.exportMonth === 'all' ? months : [ui.exportMonth];
+  const nCases = S.cases.filter(c => scope.includes(c.month)).length, nLoop = loopRows().filter(r => scope.includes(r.date.slice(0, 7))).length;
+  const nImg = Object.keys(IMG).length;
+  return `
+  <h2>Export</h2>
+  <p class="hint">An Excel workbook with five sheets: <b>Summary</b> (per month and team lead, using live formulas), <b>Cases</b>, <b>Daily</b> (came in vs handled), <b>Loop daily</b> and <b>Leave</b>.</p>
+  <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:14px 0">
+    <label class="f"><span class="l">Months to include</span><select id="xMonth" style="min-width:200px"><option value="all">All months</option>${months.map(k => `<option value="${k}"${ui.exportMonth === k ? ' selected' : ''}>${monthLabel(k)}</option>`).join('')}</select></label>
+    <button class="btn primary" data-act="exportXlsx">Download Excel</button>
+  </div>
+  <p class="muted">This export has ${plural(nCases, 'case')} and ${plural(nLoop, 'Loop row')}. Images are not placed in Excel; the Cases sheet shows how many each case has.</p>
+  ${backupCard(nImg)}`;
+}
+const serial = (iso) => Math.round((Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) - Date.UTC(1899, 11, 30)) / 864e5);
+const numOrText = s => /^\d{1,15}$/.test(s) ? Number(s) : s;
+
+/* Builds the workbook content as plain cell specs so it can be tested without a library. */
+function buildExport(scopeMonths) {
+  const cases = S.cases.filter(c => scopeMonths.includes(c.month))
+    .sort((a, b) => a.month.localeCompare(b.month) || (a.date || '9').localeCompare(b.date || '9') || (a.time || '').localeCompare(b.time || ''));
+  const loop = loopRows().filter(r => scopeMonths.includes(r.date.slice(0, 7))).sort((a, b) => a.date.localeCompare(b.date));
+  const cs = {}; // Cases sheet
+  const CH = ['Month','Date','Email time','Period','Team lead','Colab / Tucson supp','Service ID','Case number','Concern','Type of issue','Result','Tucson supp took over','VF Inbox','Status','Points','Instruction to agent','Remarks','Agent conversation images','Instruction images'];
+  const put = (sh, r, c, cell) => { sh[`${String.fromCharCode(65 + c)}${r + 1}`] = cell; };
+  CH.forEach((h, i) => put(cs, 0, i, { t: 's', v: h }));
+  const s = v => ({ t: 's', v: v || '' });
+  cases.forEach((c, i) => {
+    const r = i + 1, R = r + 1;
+    put(cs, r, 0, s(monthLabel(c.month)));
+    put(cs, r, 1, c.date ? { t: 'n', v: serial(c.date), z: 'yyyy-mm-dd' } : s(''));
+    put(cs, r, 2, c.time ? { t: 'n', v: (+c.time.slice(0, 2) * 60 + +c.time.slice(3, 5)) / 1440, z: 'hh:mm' } : s(''));
+    put(cs, r, 3, s(periodOf(c.time)));
+    put(cs, r, 4, s(c.lead)); put(cs, r, 5, s((c.colab || []).join('; ')));
+    put(cs, r, 6, c.serviceId ? { t: typeof numOrText(c.serviceId) === 'number' ? 'n' : 's', v: numOrText(c.serviceId) } : s(''));
+    put(cs, r, 7, c.caseNo ? { t: typeof numOrText(c.caseNo) === 'number' ? 'n' : 's', v: numOrText(c.caseNo) } : s(''));
+    put(cs, r, 8, s(c.concern)); put(cs, r, 9, s(c.type)); put(cs, r, 10, s(c.result)); put(cs, r, 11, s(c.took));
+    put(cs, r, 12, s(c.vf)); put(cs, r, 13, s(statusText[statusOf(c)]));
+    put(cs, r, 14, { t: 'n', v: pointsOf(c), f: `IF(M${R}="Yes",IF(J${R}="Complex",Summary!$L$2,IF(J${R}="Simple",Summary!$L$3,0)),0)` });
+    put(cs, r, 15, s(c.instruction)); put(cs, r, 16, s(c.remarks));
+    put(cs, r, 17, { t: 'n', v: (c.images || []).filter(x => x.kind === 'chat').length });
+    put(cs, r, 18, { t: 'n', v: (c.images || []).filter(x => x.kind === 'instruction').length });
+  });
+  cs['!ref'] = `A1:S${cases.length + 1}`;
+
+  // Summary
+  const sm = {}; let r = 0;
+  ['Month','Team lead','Verified cases','Complex (verified)','Simple (verified)','Score','Waiting for verification','Loop cases that month','Share of Loop cases']
+    .forEach((h, i) => put(sm, 0, i, { t: 's', v: h }));
+  put(sm, 0, 10, { t: 's', v: 'Points per case (edit to change scoring)' });
+  put(sm, 1, 10, s('Complex')); put(sm, 1, 11, { t: 'n', v: POINTS.Complex });
+  put(sm, 2, 10, s('Simple')); put(sm, 2, 11, { t: 'n', v: POINTS.Simple });
+  put(sm, 4, 10, s('A case scores only when VF Inbox is Yes.'));
+  put(sm, 5, 10, s('Loop cases that month is the number of distinct Email/JSD values on the Loop daily sheet, entered as a value.'));
+  r = 1;
+  scopeMonths.forEach(m => {
+    const stt = monthStats(m), ml = monthLabel(m), first = r + 1;
+    stt.rows.slice().sort((a, b) => a.lead.localeCompare(b.lead)).forEach(x => {
+      const R = r + 1, base = `Cases!$A:$A,$A${R},Cases!$E:$E,$B${R}`;
+      put(sm, r, 0, s(ml)); put(sm, r, 1, s(x.lead));
+      put(sm, r, 2, { t: 'n', v: x.verified, f: `COUNTIFS(${base},Cases!$M:$M,"Yes")` });
+      put(sm, r, 3, { t: 'n', v: x.complex, f: `COUNTIFS(${base},Cases!$M:$M,"Yes",Cases!$J:$J,"Complex")` });
+      put(sm, r, 4, { t: 'n', v: x.simple, f: `COUNTIFS(${base},Cases!$M:$M,"Yes",Cases!$J:$J,"Simple")` });
+      put(sm, r, 5, { t: 'n', v: x.score, f: `SUMIFS(Cases!$O:$O,${base})` });
+      put(sm, r, 6, { t: 'n', v: x.waiting, f: `COUNTIFS(${base},Cases!$N:$N,"Waiting")` });
+      put(sm, r, 7, { t: 'n', v: stt.loopN });
+      put(sm, r, 8, { t: 'n', v: x.share == null ? 0 : x.share, f: `IF(H${R}=0,0,C${R}/H${R})`, z: '0.0%' });
+      r++;
+    });
+    const last = r, R = r + 1;
+    put(sm, r, 0, s(ml)); put(sm, r, 1, s('TOTAL'));
+    const tv = stt.rows;
+    [['verified', 2], ['complex', 3], ['simple', 4], ['score', 5], ['waiting', 6]].forEach(([k, ci]) => {
+      const col = String.fromCharCode(65 + ci);
+      put(sm, r, ci, { t: 'n', v: tv.reduce((a, x) => a + x[k], 0), f: `SUM(${col}${first + 0}:${col}${last})` });
+    });
+    put(sm, r, 7, { t: 'n', v: stt.loopN });
+    put(sm, r, 8, { t: 'n', v: stt.loopN ? tv.reduce((a, x) => a + x.verified, 0) / stt.loopN : 0, f: `IF(H${R}=0,0,C${R}/H${R})`, z: '0.0%' });
+    r += 2;
+  });
+  sm['!ref'] = `A1:L${Math.max(r, 7)}`;
+
+  // Loop daily
+  const lp = {}; ['Month','Date','Email/JSD','Issue','Assigned'].forEach((h, i) => put(lp, 0, i, { t: 's', v: h }));
+  loop.forEach((x, i) => {
+    put(lp, i + 1, 0, s(monthLabel(x.date.slice(0, 7)))); put(lp, i + 1, 1, { t: 'n', v: serial(x.date), z: 'yyyy-mm-dd' });
+    put(lp, i + 1, 2, s(x.email)); put(lp, i + 1, 3, s(x.issue)); put(lp, i + 1, 4, s(x.assigned));
+  });
+  lp['!ref'] = `A1:E${loop.length + 1}`;
+  // Daily: came in vs handled
+  const dl = {}; ['Date','Loop cases that came in','Cases handled','Verified','Handled vs came in'].forEach((h, i) => put(dl, 0, i, { t: 's', v: h }));
+  const drows = periodRows('day', '').filter(x => scopeMonths.includes(x.key.slice(0, 7))).reverse();
+  drows.forEach((x, i) => { const R = i + 2;
+    put(dl, i + 1, 0, { t: 'n', v: serial(x.key), z: 'yyyy-mm-dd' }); if (x.came != null) put(dl, i + 1, 1, { t: 'n', v: x.came }); put(dl, i + 1, 2, { t: 'n', v: x.handled }); put(dl, i + 1, 3, { t: 'n', v: x.verified });
+    put(dl, i + 1, 4, { t: 'n', v: x.came ? x.handled / x.came : 0, f: `IF(B${R}=0,0,C${R}/B${R})`, z: '0.0%' }); });
+  dl['!ref'] = `A1:E${drows.length + 1}`; dl['!cols'] = [12,22,14,10,18].map(w => ({ wch: w }));
+  // Leave and absence
+  const lv = {}; ['Team lead','Type','From','To','Days','Note'].forEach((h, i) => put(lv, 0, i, { t: 's', v: h }));
+  const ents = S.leave.filter(L => scopeMonths.includes(L.from.slice(0, 7)) || scopeMonths.includes((L.to || L.from).slice(0, 7))).sort((a, b) => a.from.localeCompare(b.from));
+  ents.forEach((L, i) => { const R = i + 2, to = L.to || L.from;
+    put(lv, i + 1, 0, s(L.lead)); put(lv, i + 1, 1, s(LEAVE[L.type])); put(lv, i + 1, 2, { t: 'n', v: serial(L.from), z: 'yyyy-mm-dd' }); put(lv, i + 1, 3, { t: 'n', v: serial(to), z: 'yyyy-mm-dd' });
+    put(lv, i + 1, 4, { t: 'n', v: serial(to) - serial(L.from) + 1, f: `D${R}-C${R}+1` }); put(lv, i + 1, 5, s(L.note)); });
+  lv['!ref'] = `A1:F${ents.length + 1}`; lv['!cols'] = [18,18,12,12,8,40].map(w => ({ wch: w }));
+  cs['!cols'] = [14,12,11,9,16,22,12,16,60,12,26,20,9,12,8,36,30,14,14].map(w => ({ wch: w }));
+  sm['!cols'] = [16,16,14,17,16,8,20,18,16,3,36,8].map(w => ({ wch: w }));
+  lp['!cols'] = [14,12,50,50,24].map(w => ({ wch: w }));
+  cs['!autofilter'] = { ref: cs['!ref'] }; lp['!autofilter'] = { ref: lp['!ref'] };
+  return { Summary: sm, Cases: cs, Daily: dl, 'Loop daily': lp, Leave: lv, counts: { cases: cases.length, loop: loop.length } };
+}
+function exportXlsx() {
+  const months = monthsList(), scope = ui.exportMonth === 'all' ? months : [ui.exportMonth];
+  if (!scope.length) { toast('There is nothing to export yet.'); return; }
+  const tag = ui.exportMonth === 'all' ? 'All-months' : ui.exportMonth;
+  const name = `Manila-Escalation-Case_${tag}_${todayISO()}`;
+  if (!window.XLSX) {
+    // Offline fallback: CSV of cases
+    const x = buildExport(scope), rows = []; const cs = x.Cases;
+    const maxR = x.counts.cases + 1;
+    for (let r = 1; r <= maxR; r++) rows.push(Array.from({ length: 19 }, (_, c) => { const k = `${String.fromCharCode(65 + c)}${r}`, cell = cs[k]; return cell ? cell.v : ''; }));
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    download(new Blob(['\ufeff' + csv], { type: 'text/csv' }), name + '.csv');
+    toast('Excel library did not load, so a CSV of the cases was saved instead.'); return;
+  }
+  const x = buildExport(scope), wb = XLSX.utils.book_new();
+  ['Summary', 'Cases', 'Daily', 'Loop daily', 'Leave'].forEach(n => XLSX.utils.book_append_sheet(wb, x[n], n));
+  wb.Workbook = { CalcPr: { fullCalcOnLoad: true } };
+  XLSX.writeFile(wb, name + '.xlsx');
+  toast(`Exported ${plural(x.counts.cases, 'case')} and ${plural(x.counts.loop, 'Loop row')}`);
+}
+async function backup() {
+  if (Cloud.on) { toast('Collecting images…'); await waitImages(); }
+  const blob = new Blob([JSON.stringify({ app: 'manila-escalation-case', version: 1, exportedAt: new Date().toISOString(), state: S, images: IMG })], { type: 'application/json' });
+  download(blob, `Manila-Escalation-Case_backup_${todayISO()}.json`); toast('Backup downloaded');
+}
+async function restoreFrom(file) {
+  try {
+    const j = JSON.parse(await file.text());
+    if (j.app !== 'manila-escalation-case' || !j.state) throw new Error('bad');
+    if (!await askConfirm(`Replace everything in this browser with the backup from ${j.exportedAt ? j.exportedAt.slice(0, 10) : 'this file'}?`, 'Replace data')) return;
+    S = j.state; normalize(); IMG = j.images || {};
+    await Store.clear('img'); for (const [k, v] of Object.entries(IMG)) await Store.put('img', k, v);
+    await Store.put('kv', 'state', S); ui.month = null; ui.f = { month: '', lead: '', type: '', status: '', q: '' }; ui.loopDay = null;
+    toast('Backup restored'); render();
+  } catch (e) { toast('That file is not a Manila Escalation Case backup.'); }
+}
+async function resetAll() {
+  if (!await askConfirm('Delete every case and image you added and go back to the August and September data from the Excel file?', 'Reset data')) return;
+  S = clone(SEED); normalize(); IMG = {}; await Store.clear('img'); await Store.put('kv', 'state', S);
+  ui.month = null; ui.f = { month: '', lead: '', type: '', status: '', q: '' }; ui.loopDay = null; toast('Data reset'); render();
+}
+
+/* ---------------------------------------------------------------- events */
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const a = el.dataset.act, id = el.dataset.id;
+  switch (a) {
+    case 'tab': if (el.dataset.tab !== 'post') { ui.edit = null; ui.draft = newDraft(); } go(el.dataset.tab); break;
+    case 'month': ui.month = el.dataset.m; render(); break;
+    case 'goWaiting': ui.f = { month: ui.month, lead: '', type: '', status: 'waiting', q: '' }; go('cases'); break;
+    case 'newCase': startPost(null); break;
+    case 'openAuth': showAuth(); break;
+    case 'signIn': { const eb = $('#authErr'); eb.hidden = true; try { await Cloud.U.signInWithEmailAndPassword(Cloud.auth, $('#authEmail').value.trim(), $('#authPw').value); } catch (err) { eb.textContent = authMsg(err); eb.hidden = false; } break; }
+    case 'signInMs': { const eb = $('#authErr'); eb.hidden = true; try { await Cloud.U.signInWithPopup(Cloud.auth, new Cloud.U.OAuthProvider('microsoft.com')); } catch (err) { eb.textContent = authMsg(err); eb.hidden = false; } break; }
+    case 'signOut': await Cloud.U.signOut(Cloud.auth); break;
+    case 'refreshView': render(); break;
+    case 'seedCloud': seedCloud(); break;
+    case 'migrateLocal': migrateLocal(); break;
+    case 'dismissMigrate': Cloud.legacy = null; await Store.put('kv', 'migrated', true); render(); break;
+    case 'open': openDetail(id); break;
+    case 'editImages': if (locked(S.cases.find(x => x.id === id))) { toast(LOCK_MSG); break; } ui.dd = null; openDetail(id, true); break;
+    case 'ddCancel': { const cid = ui.dd && ui.dd.id; ui.dd = null; if (cid) openDetail(cid); break; }
+    case 'ddSave': ddSave(); break;
+    case 'ddZoom': { const i = ui.dd.images.find(x => x.id === id); if (i) zoom(i.data, i.name); break; }
+    case 'ddRemove': syncDd(); ui.dd.images = ui.dd.images.filter(i => i.id !== id); openDetail(ui.dd.id, true); break;
+    case 'ddAdd': { syncDd(); const kind = el.dataset.kind; pickImages(true, list => { list.forEach(f => ui.dd.images.push({ id: uid(), kind, name: f.name, data: f.data, isNew: true })); openDetail(ui.dd.id, true); }); break; }
+    case 'ddReplace': { syncDd(); pickImages(false, list => { if (!list[0]) return; const i = ui.dd.images.find(x => x.id === id); Object.assign(i, { id: uid(), name: list[0].name, data: list[0].data, isNew: true }); openDetail(ui.dd.id, true); }); break; }
+    case 'colabAdd': addColab(); break;
+    case 'colabRm': ui.draft.colab.splice(+el.dataset.i, 1); drawColab(); break;
+    case 'suppManage': drawSupp(); $('#suppDlg').showModal(); break;
+    case 'closeSupp': $('#suppDlg').close(); break;
+    case 'suppAdd': { const n = $('#suppNew').value.trim().toUpperCase(); if (n && !S.supps.includes(n)) { S.supps.push(n); S.supps.sort(); save(); } $('#suppNew').value = ''; drawSupp(); $('#suppList').innerHTML = suppOptions(); break; }
+    case 'suppRm': S.supps = S.supps.filter(x => x !== el.dataset.n); save(); drawSupp(); $('#suppList').innerHTML = suppOptions(); break;
+    case 'loopView': ui.loopView = el.dataset.v; render(); break;
+    case 'loopGo': if (el.dataset.d) { ui.loopDay = el.dataset.d; render(); $('#dayPanel').scrollIntoView({ block: 'start' }); } break;
+    case 'loopDrill': {
+      const k = el.dataset.k, days = [...new Set(loopRows().map(r => r.date))].sort();
+      if (ui.loopView === 'day') ui.loopDay = k;
+      else if (ui.loopView === 'week') { ui.loopDay = days.find(d => d >= k && d <= addDays(k, 6)) || k; ui.loopMonth = ui.loopDay.slice(0, 7); ui.loopView = 'day'; }
+      else { ui.loopMonth = k; ui.loopDay = [...days].reverse().find(d => d.startsWith(k)) || k + '-01'; ui.loopView = 'day'; }
+      render(); $('#dayPanel').scrollIntoView({ block: 'start' }); break; }
+    case 'leaveSave': {
+      const from = $('#lvFrom').value, to = $('#lvTo').value || from, eb = $('#lvErr');
+      if (!from) { eb.textContent = 'Choose the first day.'; eb.hidden = false; break; }
+      if (to < from) { eb.textContent = 'The last day cannot be before the first day.'; eb.hidden = false; break; }
+      const rec = ui.leaveEdit ? S.leave.find(x => x.id === ui.leaveEdit) : { id: uid() };
+      Object.assign(rec, { lead: $('#lvLead').value, type: $('#lvType').value, from, to, note: $('#lvNote').value.trim() });
+      if (!ui.leaveEdit) S.leave.push(rec);
+      ui.leaveMonth = from.slice(0, 7); ui.leaveEdit = null; save(); toast('Saved'); render(); break; }
+    case 'leaveEdit': ui.leaveEdit = id; render(); window.scrollTo({ top: 0 }); break;
+    case 'leaveCancel': ui.leaveEdit = null; render(); break;
+    case 'leaveDel': if (await askConfirm('Delete this leave entry?', 'Delete')) { S.leave = S.leave.filter(x => x.id !== id); save(); render(); } break;
+    case 'closeDetail': $('#detail').close(); break;
+    case 'edit': if (locked(S.cases.find(x => x.id === id))) { toast(LOCK_MSG); break; } $('#detail').close(); startPost(id); break;
+    case 'del': {
+      const c = S.cases.find(x => x.id === id);
+      if (locked(c)) { toast(LOCK_MSG); break; }
+      if (!await askConfirm('Delete this case and its images? This cannot be undone.', 'Delete case')) break;
+      for (const i of (c.images || [])) await imgDel(i.id);
+      S.cases = S.cases.filter(x => x.id !== id); save(); $('#detail').close(); toast('Case deleted'); render(); break; }
+    case 'verifyAll': {
+      const w = filtered().filter(c => statusOf(c) === 'waiting');
+      if (!await askConfirm(`Set VF Inbox to Yes for ${plural(w.length, 'waiting case')}? They will count toward scores.`, 'Mark as Yes')) break;
+      w.forEach(c => { c.vf = 'Yes'; stamp(c); }); save(); renderCaseRows(); toast(`${plural(w.length, 'case')} verified`); break; }
+    case 'pick': $('#file-' + el.dataset.kind).click(); break;
+    case 'rmImg': ui.draft.images = ui.draft.images.filter(i => i.id !== id); drawThumbs(); break;
+    case 'zoomDraft': { const i = ui.draft.images.find(x => x.id === id); if (i) zoom(i.data, i.name); break; }
+    case 'zoom': { const c = S.cases.find(x => (x.images || []).some(i => i.id === id)), l = caseImgList(c); zoomList(l, Math.max(0, l.findIndex(x => x.id === id))); break; }
+    case 'closeLb': $('#lightbox').close(); break;
+    case 'lbPrev': ui.lb.i = (ui.lb.i + ui.lb.list.length - 1) % ui.lb.list.length; showLb(); break;
+    case 'lbNext': ui.lb.i = (ui.lb.i + 1) % ui.lb.list.length; showLb(); break;
+    case 'viewImgs': { const c = S.cases.find(x => x.id === id), l = caseImgList(c); zoomList(l, Math.max(0, l.findIndex(x => x.id === el.dataset.img))); break; }
+    case 'saveCase': saveCase(); break;
+    case 'cancelPost': ui.edit = null; ui.draft = newDraft(); go('cases'); break;
+    case 'impAdd': {
+      const all = gridToLoop(importGrid()), d = $('#impDate').value;
+      if (!d) { toast('Choose the day first.'); break; }
+      if (!all.length) { toast('Paste the table from Loop first.'); break; }
+      const rows = all.filter(r => !isVS(r.email)), vs = all.length - rows.length;
+      const have = new Set(S.loop.map(r => [r.date, r.email, r.issue].join('|').toLowerCase()));
+      const add = rows.filter(r => { const k = [d, r.email, r.issue].join('|').toLowerCase(); if (have.has(k)) return false; have.add(k); return true; });
+      S.loop.push(...add.map(r => ({ id: loopId(d, r.email, r.issue), date: d, ...r }))); S.loop.sort((a, b) => a.date.localeCompare(b.date)); save();
+      ui.loopDay = d; ui.impGrid = null; if (ui.loopView === 'day') ui.loopMonth = d.slice(0, 7);
+      toast(`Added ${plural(add.length, 'case')}${vs ? `, skipped ${plural(vs, 'VS ticket')}` : ''}${rows.length - add.length ? `, ${rows.length - add.length} already saved` : ''}`); render(); break; }
+    case 'clearDay': {
+      if (!await askConfirm(`Remove all Loop rows saved for ${fmtDay(ui.loopDay, { month: 'long', day: 'numeric' })}?`, 'Remove')) break;
+      S.loop = S.loop.filter(r => r.date !== ui.loopDay); save(); render(); break; }
+    case 'exportXlsx': exportXlsx(); break;
+    case 'backup': backup(); break;
+    case 'restore': $('#restoreFile').click(); break;
+    case 'reset': resetAll(); break;
+  }
+});
+document.addEventListener('click', e => { if (e.target.tagName === 'DIALOG' && e.target.id !== 'confirmDlg') e.target.close(); });
+function zoom(src, name) { zoomList([{ src, name }], 0); }
+function zoomList(list, i) {
+  list = list.filter(x => x.src); if (!list.length) { toast('Image data not found in this browser.'); return; }
+  ui.lb = { list, i: Math.max(0, Math.min(i, list.length - 1)) }; showLb();
+  if (!$('#lightbox').open) $('#lightbox').showModal();
+}
+function showLb() {
+  const { list, i } = ui.lb, it = list[i];
+  $('#lbImg').src = it.src; $('#lbImg').alt = it.name; $('#lbCap').textContent = list.length > 1 ? `${it.name} (${i + 1} of ${list.length})` : it.name;
+  $('#lbPrev').hidden = $('#lbNext').hidden = list.length < 2;
+}
+const caseImgList = c => (c.images || []).map(i => ({ id: i.id, src: IMG[i.id], name: i.name }));
+
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'verifier') { ui.verifier = t.checked; if ($('#detail').open) $('#detail').close(); render(); return; }
+  if (t.dataset.vf) { const c = S.cases.find(x => x.id === t.dataset.vf); c.vf = t.value; stamp(c); save(); renderCaseRows(); if ($('#detail').open) openDetail(c.id); toast(`VF Inbox set to ${t.value || 'Waiting'}`); return; }
+  if (t.id === 'fMonth') { ui.f.month = t.value; renderCaseRows(); }
+  if (t.id === 'fLead') { ui.f.lead = t.value; renderCaseRows(); }
+  if (t.id === 'fType') { ui.f.type = t.value; renderCaseRows(); }
+  if (t.id === 'fStatus') { ui.f.status = t.value; renderCaseRows(); }
+  if (t.id === 'xMonth') { ui.exportMonth = t.value; render(); }
+  if (t.id === 'lpMonth') { ui.loopMonth = t.value; render(); }
+  if (t.id === 'lvMonth') { ui.leaveMonth = t.value; render(); }
+  if (t.id === 'ddTime' || t.id === 'ddDate' || t.id === 'ddConcern') syncDd();
+  if (t.id === 'fLeadSel') { const n = $('#fLeadNew'); n.hidden = t.value !== '__new'; if (!n.hidden) n.focus(); }
+  if (t.id === 'fDate') {
+    const cm = $('#fCM'), m = t.value.slice(0, 7);
+    if (m && !cm.dataset.manual) { if (![...cm.options].some(o => o.value === m)) cm.add(new Option(monthLabel(m), m)); cm.value = m; }
+  }
+  if (t.id === 'fCM') t.dataset.manual = '1';
+  if (t.id === 'fTime') updatePeriodNote();
+  if (t.type === 'file' && t.id.startsWith('file-')) { addFiles(t.files, t.id.slice(5)); t.value = ''; }
+  if (t.id === 'restoreFile' && t.files[0]) { restoreFrom(t.files[0]); t.value = ''; }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'fQ') { ui.f.q = t.value; renderCaseRows(); }
+  if (t.id === 'fTime') updatePeriodNote();
+  if (t.id === 'impText') { ui.impGrid = null; previewImp(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'authPw') { e.preventDefault(); $('[data-act=signIn]').click(); return; }
+  if ($('#lightbox').open && ui.lb && ui.lb.list.length > 1 && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { ui.lb.i = (ui.lb.i + (e.key === 'ArrowRight' ? 1 : ui.lb.list.length - 1)) % ui.lb.list.length; showLb(); return; }
+  if (e.key === 'Enter' && e.target.id === 'fColabIn') { e.preventDefault(); addColab(); return; }
+  if (e.key === 'Enter' && e.target.id === 'suppNew') { e.preventDefault(); $('[data-act=suppAdd]').click(); return; }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('drop')) { e.preventDefault(); e.target.click(); }
+});
+$('#detail').addEventListener('close', () => { ui.dd = null; ui.curDetail = null; });
+// drag and drop + paste for images
+document.addEventListener('dragover', e => { const z = e.target.closest && e.target.closest('[data-zone]'); if (z) { e.preventDefault(); $('.drop', z).classList.add('over'); } });
+document.addEventListener('dragleave', e => { const z = e.target.closest && e.target.closest('[data-zone]'); if (z) $('.drop', z).classList.remove('over'); });
+document.addEventListener('drop', e => { const z = e.target.closest && e.target.closest('[data-zone]'); if (z) { e.preventDefault(); $('.drop', z).classList.remove('over'); addFiles(e.dataTransfer.files, z.dataset.zone); } });
+document.addEventListener('focusin', e => { const z = e.target.closest && e.target.closest('[data-zone]'); if (z) ui.pasteKind = z.dataset.zone; });
+document.addEventListener('mouseover', e => { const z = e.target.closest && e.target.closest('[data-zone]'); if (z) ui.pasteKind = z.dataset.zone; });
+document.addEventListener('paste', e => {
+  if (e.target.id === 'impText' && e.clipboardData) {
+    const html = e.clipboardData.getData('text/html'), grid = html && /<table/i.test(html) ? tableHtmlToGrid(html) : null;
+    if (grid && grid.length) { e.preventDefault(); ui.impGrid = grid; e.target.value = grid.map(r => r.map(c => c.replace(/\s*\n\s*/g, ' / ')).join('\t')).join('\n'); previewImp(); }
+    return;
+  }
+  if (ui.tab !== 'post' || !e.clipboardData) return;
+  const files = [...e.clipboardData.files].filter(f => f.type.startsWith('image/'));
+  if (files.length) { e.preventDefault(); addFiles(files, ui.pasteKind); toast(`Pasted into ${ui.pasteKind === 'chat' ? 'Conversation with the agent' : 'Instructions given'}`); }
+});
+
+/* ------------------------------------------------------------------ boot */
+/* ============================================================ shared database (Firebase) */
+const Cloud = { on: CLOUD, ready: false, user: null, isVerifier: false, legacy: null, pending: 0, unsubs: [], last: { cases: {}, loop: {}, leave: {} }, lastSettings: '', imgPending: new Set(), imgTries: {} };
+const COLS = ['cases', 'loop', 'leave'];
+const LOCK_MSG = 'Verified cases can only be changed by Glenn.';
+const stable = o => JSON.stringify(o, (k, v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : v);
+function hashId(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
+const loopId = (d, e, i) => 'L' + String(d).replace(/-/g, '') + hashId([d, e, i].join('|').toLowerCase());
+const locked = c => !!(Cloud.on && c && c.vf === 'Yes' && !Cloud.isVerifier);
+function stamp(c) { if (Cloud.on && Cloud.user) { c.updatedBy = Cloud.user.email || 'Team member'; c.updatedAt = new Date().toISOString(); } }
+const missingMsg = id => !Cloud.on ? 'Image data not found in this browser' : (Cloud.imgPending.has(id) || (!IMG[id] && (Cloud.imgTries[id] || 0) < 4)) ? 'Loading image…' : 'Image not found';
+
+function setSync() {
+  const n = $('#storeNote'); if (!Cloud.on || !Cloud.ready) return;
+  const off = typeof navigator !== 'undefined' && navigator.onLine === false;
+  n.textContent = Cloud.pending > 0 ? (off ? 'Offline: changes will sync' : 'Saving…') : (off ? 'Offline: showing saved copy' : 'Saved to the shared database');
+  n.classList.toggle('warn', off);
+}
+window.addEventListener('online', setSync); window.addEventListener('offline', setSync);
+function cloudError(e) {
+  console.error(e); const c = e && e.code || '';
+  toast(c === 'permission-denied' ? 'Not allowed. Only Glenn can set VF Inbox or change verified cases.' : `Could not save: ${(e && e.message) || e}`);
+}
+const authMsg = e => ({ 'auth/invalid-credential': 'The email or password is not right.', 'auth/wrong-password': 'The email or password is not right.', 'auth/user-not-found': 'The email or password is not right.', 'auth/invalid-email': 'Enter a valid email address.', 'auth/too-many-requests': 'Too many tries. Wait a few minutes and try again.', 'auth/popup-closed-by-user': 'The sign-in window was closed.' }[e && e.code] || (e && e.message) || 'Could not sign in.');
+
+/* write only what changed since the last sync */
+function flush() {
+  if (!Cloud.on) return Store.put('kv', 'state', S);
+  if (!Cloud.ready) return;
+  const { F, db } = Cloud, ops = [];
+  for (const name of COLS) {
+    const last = Cloud.last[name], seen = new Set();
+    for (const o of S[name]) { if (!o.id) continue; seen.add(o.id); const s = stable(o); if (last[o.id] !== s) { ops.push(['set', name, o.id, JSON.parse(s)]); last[o.id] = s; } }
+    for (const id of Object.keys(last)) if (!seen.has(id)) { ops.push(['del', name, id]); delete last[id]; }
+  }
+  const ss = stable({ supps: S.supps || [] });
+  if (ss !== Cloud.lastSettings) { ops.push(['set', 'meta', 'settings', JSON.parse(ss)]); Cloud.lastSettings = ss; }
+  for (let i = 0; i < ops.length; i += 400) {
+    const b = F.writeBatch(db);
+    ops.slice(i, i + 400).forEach(([k, col, id, data]) => k === 'set' ? b.set(F.doc(db, col, id), data) : b.delete(F.doc(db, col, id)));
+    Cloud.pending++; setSync();
+    b.commit().then(() => { Cloud.pending--; setSync(); }).catch(e => { Cloud.pending--; setSync(); cloudError(e); });
+  }
+}
+/* apply changes from the database to the in-memory copy without replacing objects (open forms keep working) */
+function applyChanges(name, snap) {
+  const arr = S[name], last = Cloud.last[name];
+  snap.docChanges().forEach(ch => {
+    const id = ch.doc.id, idx = arr.findIndex(x => x.id === id);
+    if (ch.type === 'removed') { if (idx >= 0) arr.splice(idx, 1); delete last[id]; return; }
+    const data = { ...ch.doc.data(), id };
+    let o;
+    if (idx >= 0) { o = arr[idx]; Object.keys(o).forEach(k => delete o[k]); Object.assign(o, data); } else { o = data; arr.push(o); }
+    if (name === 'cases') normalizeCase(o);
+    last[id] = stable(o);
+  });
+  scheduleRefresh();
+}
+let refT;
+function scheduleRefresh() {
+  if (!Cloud.ready) return; clearTimeout(refT);
+  refT = setTimeout(() => {
+    ensureImages();
+    if (ui.tab === 'cases') { renderCaseRows(); return; }
+    const ae = document.activeElement, typing = ae && ae.closest && ae.closest('#view') && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
+    if (ui.tab === 'post' || typing) { $('#stale').hidden = false; return; }
+    render();
+  }, 250);
+}
+let imgT;
+function imgRefresh() { clearTimeout(imgT); imgT = setTimeout(() => { if (ui.tab === 'cases') renderCaseRows(); if ($('#detail').open && !ui.dd && ui.curDetail) openDetail(ui.curDetail); }, 150); }
+async function fetchImg(id) {
+  const { F, db } = Cloud; Cloud.imgPending.add(id); Cloud.imgTries[id] = (Cloud.imgTries[id] || 0) + 1;
+  try {
+    const ref = F.doc(db, 'images', id); let snap = null;
+    try { snap = await F.getDocFromCache(ref); } catch (e) { snap = null; }
+    if (!snap || !snap.exists()) snap = await F.getDoc(ref);
+    if (snap.exists()) IMG[id] = snap.data().data; else setTimeout(ensureImages, 4000);
+  } catch (e) { console.warn('image', id, e); setTimeout(ensureImages, 4000); }
+  Cloud.imgPending.delete(id); imgRefresh();
+}
+function ensureImages() {
+  if (!Cloud.on || !Cloud.ready) return;
+  const need = []; S.cases.forEach(c => (c.images || []).forEach(i => { if (!IMG[i.id] && !Cloud.imgPending.has(i.id) && (Cloud.imgTries[i.id] || 0) < 4) need.push(i.id); }));
+  const worker = async () => { while (need.length) await fetchImg(need.shift()); };
+  worker(); worker(); worker(); worker();
+}
+async function waitImages() { const t0 = Date.now(); do { ensureImages(); await new Promise(r => setTimeout(r, 300)); } while (Cloud.imgPending.size && Date.now() - t0 < 30000); }
+async function imgPut(id, data, caseId) {
+  IMG[id] = data;
+  if (Cloud.on) Cloud.F.setDoc(Cloud.F.doc(Cloud.db, 'images', id), { data, caseId: caseId || '', at: Date.now() }).catch(cloudError);
+  else await Store.put('img', id, data);
+}
+async function imgDel(id) {
+  delete IMG[id];
+  if (Cloud.on) Cloud.F.deleteDoc(Cloud.F.doc(Cloud.db, 'images', id)).catch(() => {});
+  else await Store.del('img', id);
+}
+
+/* one-time helpers for the first person who sets things up */
+async function seedCloud() {
+  if (!await askConfirm('Add the August and September cases and Loop rows from the Excel file to the shared database? Anything already there is kept.', 'Add data')) return;
+  const seed = clone(SEED), have = new Set(S.cases.map(c => c.id)), lh = new Set(S.loop.map(r => r.id));
+  seed.cases.forEach(c => { if (!have.has(c.id)) { normalizeCase(c); stamp(c); S.cases.push(c); } });
+  seed.loop.forEach(r => { const id = loopId(r.date, r.email, r.issue); if (!lh.has(id)) { lh.add(id); S.loop.push({ ...r, id }); } });
+  S.supps = [...new Set([...S.supps, ...seed.supps])].sort(); normalize(); save(); toast('Excel data added'); render();
+}
+async function migrateLocal() {
+  const old = Cloud.legacy; if (!old) return;
+  const imgs = await Store.all('img'), have = new Set(S.cases.map(c => c.id)), lh = new Set(S.loop.map(r => r.id)), vh = new Set(S.leave.map(r => r.id));
+  let nc = 0, nl = 0, nv = 0;
+  for (const c of old.cases || []) {
+    if (have.has(c.id) || (!Cloud.isVerifier && /^x\d/.test(c.id))) continue;
+    const copy = clone(c); normalizeCase(copy); if (!Cloud.isVerifier) copy.vf = ''; stamp(copy); S.cases.push(copy); nc++;
+    for (const im of copy.images) if (imgs[im.id]) await imgPut(im.id, imgs[im.id], copy.id);
+  }
+  for (const r of old.loop || []) { const id = r.id || loopId(r.date, r.email, r.issue); if (!lh.has(id)) { lh.add(id); S.loop.push({ ...r, id }); nl++; } }
+  for (const r of old.leave || []) if (!vh.has(r.id)) { S.leave.push(clone(r)); nv++; }
+  S.supps = [...new Set([...S.supps, ...(old.supps || [])])].sort();
+  normalize(); save(); await Store.put('kv', 'migrated', true); Cloud.legacy = null;
+  toast(`Uploaded ${plural(nc, 'case')}, ${plural(nl, 'Loop row')} and ${plural(nv, 'leave entry')}`); render(); ensureImages();
+}
+function backupCard(nImg) {
+  if (!Cloud.on) return `<div class="card"><h3>Backup and restore</h3>
+    <p class="hint">Cases, Loop days and all ${plural(nImg, 'image')} are saved in this browser only. To move everything to another computer or share it with the team, download a backup and restore it there.</p>
+    <div class="actions" style="margin-top:8px"><button class="btn" data-act="backup">Download backup</button><button class="btn" data-act="restore">Restore from backup</button><button class="btn danger" data-act="reset">Reset to the original Excel data</button></div></div>`;
+  const needSeed = Cloud.isVerifier && !S.cases.some(c => /^x\d/.test(c.id));
+  return `<div class="card"><h3>Shared database</h3>
+    <p class="hint">Everything is stored in Firebase and shared with the team: ${plural(S.cases.length, 'case')}, ${plural(S.loop.length, 'Loop row')}, ${plural(S.leave.length, 'leave entry')} and ${plural(Object.keys(IMG).length, 'image')} loaded in this browser.</p>
+    <div class="actions" style="margin-top:8px"><button class="btn" data-act="backup">Download a backup file</button>${needSeed ? '<button class="btn" data-act="seedCloud">Add the August and September data from Excel</button>' : ''}</div></div>
+  ${Cloud.legacy ? `<div class="card"><h3>Data found in this browser</h3><p class="hint">This browser has cases, Loop days or leave saved from before the move to Firebase. Upload them so the whole team can see them.</p><div class="actions"><button class="btn primary" data-act="migrateLocal">Upload to the shared database</button><button class="btn" data-act="dismissMigrate">Not now</button></div></div>` : ''}`;
+}
+
+/* sign-in and live listeners */
+async function cloudInit() {
+  const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/`;
+  const [A, F, U] = await Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-firestore.js'), import(base + 'firebase-auth.js')]);
+  const app = A.initializeApp(FIREBASE_CONFIG);
+  let db; try { db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) }); } catch (e) { db = F.getFirestore(app); }
+  Object.assign(Cloud, { A, F, U, app, db, auth: U.getAuth(app) });
+}
+function teardown() {
+  Cloud.unsubs.forEach(u => { try { u(); } catch (e) {} }); Cloud.unsubs = []; Cloud.ready = false; Cloud.user = null; Cloud.isVerifier = false; Cloud.session = null;
+  S = { cases: [], loop: [], supps: [], leave: [] }; IMG = {}; Cloud.last = { cases: {}, loop: {}, leave: {} }; Cloud.lastSettings = '';
+  $('#who').textContent = ''; $('#signOutBtn').hidden = true; $('#signInBtn').hidden = true; $('#storeNote').textContent = ''; $('#tabs').innerHTML = '';
+  $('#view').innerHTML = '<p class="empty">Loading…</p>';
+}
+function showAuth() {
+  $('#authEmail').value = (Cloud.verifierEmails || [])[0] || ''; $('#authPw').value = ''; $('#authErr').hidden = true;
+  if (!$('#authDlg').open) $('#authDlg').showModal(); setTimeout(() => $('#authPw').focus(), 50);
+}
+const CLOUD_TIMEOUT = window.__cloudTimeout || 15000;
+const withTimeout = (p, ms = CLOUD_TIMEOUT) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('Timed out'), { code: 'timeout' })), ms))]);
+function explain(e) {
+  const c = (e && e.code) || '';
+  const fix = 'In the Firebase console check that: (1) Firestore Database has been created, (2) Authentication > Sign-in method has Anonymous enabled, (3) the rules from firestore.rules are published, (4) this web address is listed under Authentication > Settings > Authorized domains.';
+  if (c === 'permission-denied') return 'The database refused access. Publish the security rules from firestore.rules and make sure Anonymous sign-in is enabled. ' + fix;
+  if (c === 'timeout' || c === 'unavailable') return 'The page could not reach the database. Check your internet connection, then: ' + fix;
+  if (c === 'not-found' || c === 'failed-precondition') return 'The Firestore database does not seem to exist yet. ' + fix;
+  return ((e && e.message) || 'Unknown error') + (c ? ` (${c}). ` : '. ') + fix;
+}
+function cloudFail(msg, e) { console.error(e); $('.switch').hidden = true; $('#storeNote').textContent = 'Not connected'; $('#storeNote').classList.add('warn'); $('#view').innerHTML = `<h2>Could not connect to the shared database</h2><p class="muted" style="max-width:720px">${esc(msg)}</p><button class="btn primary" onclick="location.reload()">Try again</button>`; }
+async function startSession(user) {
+  const { F, db } = Cloud, email = (user.email || '').toLowerCase();
+  if (Cloud.session === user.uid) return; Cloud.session = user.uid;
+  if ($('#authDlg').open) $('#authDlg').close();
+  $('#view').innerHTML = '<p class="empty">Loading the shared data…</p>'; $('#storeNote').textContent = 'Connecting…';
+  let team = null;
+  try { const s = await withTimeout(F.getDoc(F.doc(db, 'meta', 'team'))); team = s.exists() ? s.data() : null; } catch (e) { Cloud.session = null; return cloudFail(explain(e), e); }
+  Cloud.verifierEmails = ((team && team.verifiers) || []).map(x => String(x).toLowerCase());
+  Cloud.user = user; Cloud.isVerifier = !!email && Cloud.verifierEmails.includes(email);
+  $('#who').textContent = Cloud.isVerifier ? email + ' (verifier)' : '';
+  $('#signOutBtn').hidden = !email; $('#signInBtn').hidden = !!email;
+  $('.switch').hidden = !Cloud.isVerifier; ui.verifier = false; $('#verifier').checked = false;
+  S = { cases: [], loop: [], supps: [], leave: [] };
+  const firsts = [];
+  const watch = (src, fn) => firsts.push(new Promise(res => { let first = true; const done = () => { if (first) { first = false; res(); } };
+    Cloud.unsubs.push(F.onSnapshot(src, snap => { fn(snap); done(); }, err => { Cloud.loadError = Cloud.loadError || err; cloudError(err); done(); })); }));
+  COLS.forEach(n => watch(F.collection(db, n), snap => applyChanges(n, snap)));
+  watch(F.doc(db, 'meta', 'settings'), snap => { if (snap.exists()) { S.supps = snap.data().supps || []; S.suppsMerged = true; Cloud.lastSettings = stable({ supps: S.supps }); } scheduleRefresh(); });
+  Cloud.loadError = null;
+  try { await withTimeout(Promise.all(firsts)); } catch (e) { Cloud.session = null; return cloudFail(explain(e), e); }
+  if (Cloud.loadError) { Cloud.session = null; return cloudFail(explain(Cloud.loadError), Cloud.loadError); }
+  Cloud.ready = true; normalize();
+  await Store.open();
+  const old = await Store.get('kv', 'state'), done = await Store.get('kv', 'migrated');
+  if (old && !done) {
+    const seedL = new Set(SEED.loop.map(r => loopId(r.date, r.email, r.issue)));
+    const extra = (old.cases || []).some(c => !/^x\d/.test(c.id)) || (old.leave || []).length || (old.loop || []).some(r => !seedL.has(r.id || loopId(r.date, r.email, r.issue)));
+    if (extra) Cloud.legacy = old;
+  }
+  const ms = monthsList(); ui.month = ms[ms.length - 1] || null; ui.f.month = ui.month || '';
+  setSync(); render(); ensureImages();
+  if (Cloud.legacy) toast('This browser has older data. Open Export to upload it.');
+}
+async function bootCloud() {
+  $('.switch').hidden = true;
+  $('#view').innerHTML = '<p class="empty">Connecting to the shared database…</p>'; $('#storeNote').textContent = '';
+  try { await cloudInit(); } catch (e) { return cloudFail('Could not load Firebase. Check your internet connection and reload.', e); }
+  Cloud.U.onAuthStateChanged(Cloud.auth, user => {
+    if (!user) {
+      teardown();
+      Cloud.U.signInAnonymously(Cloud.auth).catch(e => cloudFail(['auth/operation-not-allowed', 'auth/admin-restricted-operation'].includes(e.code) ? 'Anonymous access is not turned on. In Firebase, open Authentication > Sign-in method and enable Anonymous.' : 'Could not connect to the shared database.', e));
+    } else { if (Cloud.session && Cloud.session !== user.uid) teardown(); startSession(user); }
+  });
+}
+async function bootLocal() {
+  await Store.open();
+  let saved = await Store.get('kv', 'state');
+  if (!saved) { saved = clone(SEED); await Store.put('kv', 'state', saved); }
+  S = saved; normalize(); await Store.put('kv', 'state', S); IMG = await Store.all('img');
+  const note = $('#storeNote');
+  note.textContent = Store.persistent ? 'Local mode: saved in this browser only' : 'Preview mode: changes are not kept after reload';
+  note.classList.toggle('warn', true);
+  const ms = monthsList(); ui.month = ms[ms.length - 1] || null; ui.f.month = ui.month || '';
+  render();
+}
+(CLOUD ? bootCloud : bootLocal)();
+</script>
+</body>
+</html>
